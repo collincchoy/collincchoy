@@ -141,7 +141,7 @@ var displayStartMenu = function() {
     fill(0);
     
     textSize(50);
-    text("Jumping Jan", 200, 80);
+    text("Jumping Janet", 200, 80);
     
     playButton.draw();
     helpButton.draw();
