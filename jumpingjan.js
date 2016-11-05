@@ -132,8 +132,8 @@ ArrowButton.prototype.getVertices = function() {
 var playButton = new Button(200, 200, "Play");
 var helpButton = new Button(200, 250, "Help");
 var optionsButton = new Button(200, 300, "Options");
-var help_nextButton = new ArrowButton(350, 370, "Next");
-var controls_backButton = new ArrowButton(50, 370, "Back", -1);
+var help_nextButton = new ArrowButton(350, 350, "Next");
+var controls_backButton = new ArrowButton(50, 350, "Back", -1);
 var menuButton = new Button(200, 350, "Menu");
 var displayStartMenu = function() {
     background(255, 255, 255);
@@ -141,6 +141,9 @@ var displayStartMenu = function() {
     
     textSize(50);
     text("Jumping Jan", 200, 80);
+    
+    textSize(20);
+    text("Collin C. Choy", 75, 380);
     
     playButton.draw();
     helpButton.draw();
@@ -153,15 +156,34 @@ var displayHelpMenu = function() {
     textSize(30);
     text("Instructions", 200, 140);
     
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
     stroke(0);
     fill(199, 197, 197, 50);
-    rect(50, 200, 300, 90);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
     fill(0);
     var instructions = "Jan awakens to finds herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
     textSize(14);
-    text(instructions, 55, 200, 280, 90);
+    text(instructions, 55, 180, 280, 95);
     
     help_nextButton.draw();
+};
+
+var drawKey = function(x, y, label, width) {
+    var KEY_SIZE_W = width || 20;
+    var KEY_SIZE_H = 20;
+    fill(245, 245, 245);
+    rect(x-KEY_SIZE_W/2, y-KEY_SIZE_H/2, KEY_SIZE_W, KEY_SIZE_H);
+    
+    fill(0);
+    text(label, x, y);
 };
 
 var displayControlsMenu = function() {
@@ -170,14 +192,36 @@ var displayControlsMenu = function() {
     textSize(30);
     text("Controls", 200, 140);
     
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
     stroke(0);
     fill(199, 197, 197, 50);
-    rect(50, 200, 300, 90);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
     fill(0);
-    var instructions = "jjjjjjjjjjjjjjjjjjjjj";
     textSize(14);
-    text(instructions, 55, 200, 280, 90);
+
+    // AWSD Movement
+    drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'W');
+    drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H)+25, 'S');
+    drawKey(CONTENT_X1+(0.25*CONTENT_W)-25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'A');
+    drawKey(CONTENT_X1+(0.25*CONTENT_W)+25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'D');
+    text("Move Jan", CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.8*CONTENT_H));
     
+    drawKey(CONTENT_X1+(0.75*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'P');
+    drawKey(CONTENT_X1+(0.75*CONTENT_W)-15, CONTENT_Y1+(0.7*CONTENT_H), "Space", 50);
+    textAlign(LEFT, CENTER);
+    text("Pause", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.3*CONTENT_H));
+    text("Action", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.7*CONTENT_H));
+    
+    textAlign(CENTER, CENTER);
     controls_backButton.draw();
     menuButton.draw();
 };
