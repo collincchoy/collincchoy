@@ -81,7 +81,6 @@ Button.prototype.draw = function() {
     }
 
     var vertices = this.getVertices();
-    debug(vertices);
     beginShape();
         for (var i = 0; i < vertices.length;i++) {
             vertex(vertices[i].x, vertices[i].y);
@@ -141,7 +140,7 @@ var displayStartMenu = function() {
     fill(0);
     
     textSize(50);
-    text("Jumping Janet", 200, 80);
+    text("Jumping Jan", 200, 80);
     
     playButton.draw();
     helpButton.draw();
