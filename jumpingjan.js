@@ -2,6 +2,8 @@ var sketchProc=function(processingInstance){ with (processingInstance){
 size(400, 400); 
 frameRate(60);
 
+/* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
+
 angleMode = 'radians';
 textAlign(CENTER, CENTER);
 
@@ -9,9 +11,12 @@ var GameState = {
     START_MENU : 0,
     PLAYING : 1,
     HELP_MENU : 2,
-    OPTIONS_MENU : 3
+    OPTIONS_MENU : 3,
+    CONTROLS_MENU : 4
 };
 var CurrentGameState = GameState.START_MENU;
+
+/* --------------------- Button Object --------------------- \*/
 
 var Button = function(x, y, txt) {
     this.position = new PVector(x, y); // Center of the button
@@ -59,6 +64,13 @@ Button.prototype.getCornerPositionY = function(corner) {
     }
 };
 
+Button.prototype.getVertices = function() {
+    return [{x:this.getCornerPositionX("upper_left") , y:this.getCornerPositionY("upper_left") },
+{x:this.getCornerPositionX("upper_right"), y:this.getCornerPositionY("upper_right")},
+{x:this.getCornerPositionX("lower_right"), y:this.getCornerPositionY("lower_right")},
+{x:this.getCornerPositionX("lower_left") , y:this.getCornerPositionY("lower_left") }];
+};
+
 Button.prototype.draw = function() {
     if (this.mouseIsOnMe()) {
         fill(200, 200, 200);
@@ -67,11 +79,13 @@ Button.prototype.draw = function() {
     else {
         noFill();
     }
+
+    var vertices = this.getVertices();
+    debug(vertices);
     beginShape();
-        vertex(this.getCornerPositionX("upper_left"), this.getCornerPositionY("upper_left"));
-        vertex(this.getCornerPositionX("upper_right"), this.getCornerPositionY("upper_right"));
-        vertex(this.getCornerPositionX("lower_right"), this.getCornerPositionY("lower_right"));
-        vertex(this.getCornerPositionX("lower_left"), this.getCornerPositionY("lower_left"));
+        for (var i = 0; i < vertices.length;i++) {
+            vertex(vertices[i].x, vertices[i].y);
+        }
     endShape(CLOSE);
     
     fill(0);
@@ -79,9 +93,49 @@ Button.prototype.draw = function() {
     text(this.text, this.position.x, this.position.y);
 };
 
+/* --------------------- END Button Object --------------------- \*/
+
+var ArrowButton = function(x, y, txt, dir) {
+    Button.apply(this, arguments);
+    
+    this.width = 50;
+    this.height = 25;
+    
+    this.direction = ((dir || 1) > 0) ? 1 : -1;
+};
+
+ArrowButton.prototype = Object.create(Button.prototype);
+ArrowButton.prototype.constructor = ArrowButton;
+
+ArrowButton.prototype.getVertices = function() {
+    var stemSize_h = 0.6;
+    var stemSize_w = 0.6;
+    
+    var x1 = -(this.width/2);
+    var x2 = (stemSize_w * this.width) - (this.width/2);
+    var x3 = (this.width/2);
+    
+    var y1 = -1*((stemSize_h * this.height)/2);
+    var y2 = -1*(this.height/2);
+    var y3 = 0;
+    
+        return [{x:this.position.x+(this.direction*x1), y:this.position.y-y1},
+                {x:this.position.x+(this.direction*x2), y:this.position.y-y1},
+                {x:this.position.x+(this.direction*x2), y:this.position.y-y2},
+                {x:this.position.x+(this.direction*x3), y:this.position.y-y3}, // ArrowHead
+                {x:this.position.x+(this.direction*x2), y:this.position.y+y2},
+                {x:this.position.x+(this.direction*x2), y:this.position.y+y1},
+                {x:this.position.x+(this.direction*x1), y:this.position.y+y1}];
+
+};
+
+/* --------------------- Menu Views --------------------- \*/
 var playButton = new Button(200, 200, "Play");
 var helpButton = new Button(200, 250, "Help");
 var optionsButton = new Button(200, 300, "Options");
+var help_nextButton = new ArrowButton(350, 370, "Next");
+var controls_backButton = new ArrowButton(50, 370, "Back", -1);
+var menuButton = new Button(200, 350, "Menu");
 var displayStartMenu = function() {
     background(255, 255, 255);
     fill(0);
@@ -104,16 +158,40 @@ var displayHelpMenu = function() {
     fill(199, 197, 197, 50);
     rect(50, 200, 300, 90);
     fill(0);
-    var instructions = "Venture out to the bottom of the ocean and help the fish by popping some bubbles. Sit back, relax, and pop away! Don't let too many bubbles escape or you'll have to start over again.";
+    var instructions = "Jan awakens to finds herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
     textSize(14);
     text(instructions, 55, 200, 280, 90);
+    
+    help_nextButton.draw();
+};
+
+var displayControlsMenu = function() {
+    background(20, 200, 0, 10);
+    fill(0);
+    textSize(30);
+    text("Controls", 200, 140);
+    
+    stroke(0);
+    fill(199, 197, 197, 50);
+    rect(50, 200, 300, 90);
+    fill(0);
+    var instructions = "jjjjjjjjjjjjjjjjjjjjj";
+    textSize(14);
+    text(instructions, 55, 200, 280, 90);
+    
+    controls_backButton.draw();
+    menuButton.draw();
 };
 
 var displayOptionsMenu = function() {
     background(0, 100, 200, 10);
+    
+    menuButton.draw();
 };
 
-/* User Control */
+/* --------------------- END Menu Views --------------------- \*/
+
+/* --------------------- User Control --------------------- \*/
 var mouseClicked = function() {
     if (CurrentGameState === GameState.START_MENU) {
         if (playButton.mouseIsOnMe()) {
@@ -126,7 +204,27 @@ var mouseClicked = function() {
             CurrentGameState = GameState.OPTIONS_MENU;   
         }
     }
+    else if (CurrentGameState === GameState.HELP_MENU) {
+        if (help_nextButton.mouseIsOnMe()) {
+            CurrentGameState = GameState.CONTROLS_MENU;
+        }
+    }
+    else if (CurrentGameState === GameState.CONTROLS_MENU) {
+        if (controls_backButton.mouseIsOnMe()) {
+            CurrentGameState = GameState.HELP_MENU;
+        }
+        else if (menuButton.mouseIsOnMe()) {
+            CurrentGameState = GameState.START_MENU;   
+        }
+    }
+    else if (CurrentGameState === GameState.OPTIONS_MENU) {
+        if (menuButton.mouseIsOnMe()) {
+            CurrentGameState = GameState.START_MENU;   
+        }   
+    }
 };
+
+/* --------------------- END User Control --------------------- \*/
 
 var draw = function() {
     cursor(ARROW);
@@ -140,10 +238,15 @@ var draw = function() {
         case GameState.OPTIONS_MENU:
             displayOptionsMenu();
             break;
+        case GameState.CONTROLS_MENU:
+            displayControlsMenu();
+            break;
         default:
+            CurrentGameState = GameState.START_MENU;
             // Should not reach default case
     }
 };
 
+/* --------------------- END PROGRAM CODE --------------------- \*/
 
 }};
