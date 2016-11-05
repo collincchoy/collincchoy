@@ -15,6 +15,7 @@ var GameState = {
     CONTROLS_MENU : 4
 };
 var CurrentGameState = GameState.START_MENU;
+var SETTINGS_PLAYER_COLOR = 0;
 
 /* --------------------- Button Object --------------------- \*/
 
@@ -165,6 +166,7 @@ var displayHelpMenu = function() {
     var CONTENT_Y2 = 280;
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
+    // Content Box
     stroke(0);
     fill(199, 197, 197, 50);
     rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
@@ -226,8 +228,125 @@ var displayControlsMenu = function() {
     menuButton.draw();
 };
 
+var ColorSelectorBox = function(x, y, col) {
+    this.position = new PVector(x, y);
+    this.size = 10;
+    
+    this.selected = false;
+    
+    this.color = (col === 'r') ? color(185, 0, 0) :
+                    (col === 'b') ? color(80, 0, 255) :
+                    (col === 'g') ? color(150, 200, 20) :
+                    (col === 'y') ? color(228, 232, 16) :
+                    color(185, 0, 0);
+};
+
+ColorSelectorBox.prototype.setSelected = function(newValue) {
+    this.selected = newValue;
+};
+
+ColorSelectorBox.prototype.mouseIsOnMe = function() {
+    return (mouseX > this.position.x-this.size/2 && mouseX < this.position.x+this.size/2 && (mouseY > this.position.y-this.size/2 && mouseY < this.position.y+this.size/2));
+};
+
+ColorSelectorBox.prototype.draw = function() {
+    strokeWeight( (this.selected) ? 3 : 1 );
+    stroke(0);
+    
+    if (this.mouseIsOnMe()) {
+        cursor(HAND);   
+    }
+    
+    fill(this.color);
+    rect(this.position.x-this.size/2, this.position.y-this.size/2, this.size, this.size);
+    strokeWeight(1);
+};
+
+var ColorSelector = function(x, y) {
+    this.position = new PVector(x, y);
+    this.items = [];
+    this.selectedIndex = 0;
+    
+    this.PADDING = 5;
+    this.ITEM_SIZE = 10;
+};
+
+ColorSelector.prototype.getWidth = function() {
+    return this.items.length*(this.PADDING+this.ITEM_SIZE);
+};
+
+ColorSelector.prototype.getNextItemPosition = function() {
+    return {x:this.position.x+(this.PADDING + this.ITEM_SIZE/2) + this.getWidth(), y:this.position.y};
+};
+
+ColorSelector.prototype.add = function(newItem_colorCode) {
+    var pos = this.getNextItemPosition();
+    this.items.push(new ColorSelectorBox(pos.x, pos.y, newItem_colorCode));
+};
+
+ColorSelector.prototype.setSelectedIndex = function(itemNumber) {
+    if (itemNumber < this.items.length) {
+        this.items[this.selectedIndex].setSelected(false);
+        this.selectedIndex = itemNumber;
+        this.items[itemNumber].setSelected(true);
+    }
+};
+
+ColorSelector.prototype.mouseIsOnMe = function() {
+    return (mouseX > this.position.x && mouseX < this.position.x+this.getWidth() && (mouseY > this.position.y-20/2 && mouseY < this.position.y+20/2));
+};
+
+ColorSelector.prototype.draw = function() {
+    for (var i = 0; i < this.items.length; i++) {
+        this.items[i].draw();   
+    }
+};
+
+var playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
+    playerColorSelector.add('r');
+    playerColorSelector.add('b');
+    playerColorSelector.add('g');
+    playerColorSelector.add('y');
+var optionsMouseCallback = function() {
+    if (playerColorSelector.mouseIsOnMe()) {
+        for (var i = 0; i < playerColorSelector.items.length; i++) {
+            if (playerColorSelector.items[i].mouseIsOnMe()) {
+                playerColorSelector.setSelectedIndex(i);
+                SETTINGS_PLAYER_COLOR = i;
+                break;
+            }
+        }
+    }
+};
+
 var displayOptionsMenu = function() {
     background(0, 100, 200, 10);
+    fill(0);
+    textSize(30);
+    text("Options", 200, 140);
+    
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    strokeWeight(1);
+    fill(199, 197, 197, 50);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+    textSize(14);
+    
+    text("Player Color: ", CONTENT_X1+(0.2*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H));
+
+    playerColorSelector.setSelectedIndex(SETTINGS_PLAYER_COLOR);
+    
+    playerColorSelector.draw();
     
     menuButton.draw();
 };
@@ -236,7 +355,8 @@ var displayOptionsMenu = function() {
 
 /* --------------------- User Control --------------------- \*/
 var mouseClicked = function() {
-    if (CurrentGameState === GameState.START_MENU) {
+    switch(CurrentGameState) {
+    case GameState.START_MENU:
         if (playButton.mouseIsOnMe()) {
             CurrentGameState = GameState.PLAYING;   
         }
@@ -246,24 +366,33 @@ var mouseClicked = function() {
         else if (optionsButton.mouseIsOnMe()) {
             CurrentGameState = GameState.OPTIONS_MENU;   
         }
-    }
-    else if (CurrentGameState === GameState.HELP_MENU) {
+        break;
+    
+    case GameState.HELP_MENU:
         if (help_nextButton.mouseIsOnMe()) {
             CurrentGameState = GameState.CONTROLS_MENU;
         }
-    }
-    else if (CurrentGameState === GameState.CONTROLS_MENU) {
+        break;
+        
+    case GameState.CONTROLS_MENU:
         if (controls_backButton.mouseIsOnMe()) {
             CurrentGameState = GameState.HELP_MENU;
         }
         else if (menuButton.mouseIsOnMe()) {
             CurrentGameState = GameState.START_MENU;   
         }
-    }
-    else if (CurrentGameState === GameState.OPTIONS_MENU) {
+        break;
+        
+    case GameState.OPTIONS_MENU:
         if (menuButton.mouseIsOnMe()) {
             CurrentGameState = GameState.START_MENU;   
-        }   
+        }
+        else {
+            optionsMouseCallback();   
+        }
+        break;
+    default:
+        break;
     }
 };
 
