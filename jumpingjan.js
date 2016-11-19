@@ -538,20 +538,17 @@ StandbyState.prototype.execute = function(self) {
 
 var MoveRightState = function() {};
 MoveRightState.prototype.execute = function(self) {
-	debug('MoveRightState executing...');
 	self.walk();
     self.position.x += self.movementSpeed;
 };
 
 var MoveLeftState = function() {};
 MoveLeftState.prototype.execute = function(self) {
-    debug('MoveLeftState executing...');
     self.position.x -= self.movementSpeed;
 };
 
 var JumpState = function() {this.jumpForce = new PVector(0, -15);};
 JumpState.prototype.execute = function(self) {
-    debug('jumping');
 	self.applyForce(this.jumpForce);
 	self.jump();
 	self.currentState = PlayerStates.FALLING;
@@ -559,20 +556,16 @@ JumpState.prototype.execute = function(self) {
 
 var JumpRightState = function() {};
 JumpRightState.prototype.execute = function(self) {
-	debug('JumpRightState executing...');
 	self.position.x += self.movementSpeed/2;
 };
 
 var JumpLeftState = function() {};
 JumpLeftState.prototype.execute = function(self) {
-	debug('JumpLeftState executing...');
 	self.position.x -= self.movementSpeed/2;
 };
 
 var FallingState = function() {};
-FallingState.prototype.execute = function(self) {
-	debug('FallingState executing...');
-};
+FallingState.prototype.execute = function(self) {};
 /***************************************************************************
 					PLAYER CLASS
 ***************************************************************************/
