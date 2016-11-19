@@ -1,10 +1,11 @@
-var sketchProc=function(processingInstance){ with (processingInstance){
+/*var sketchProc=function(processingInstance){ with (processingInstance){
 size(400, 400); 
-frameRate(60);
+frameRate(60);*/
 
 /* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
 
 angleMode = 'radians';
+var KEYS = [];
 textAlign(CENTER, CENTER);
 
 var GameState = {
@@ -12,7 +13,8 @@ var GameState = {
     PLAYING : 1,
     HELP_MENU : 2,
     OPTIONS_MENU : 3,
-    CONTROLS_MENU : 4
+    CONTROLS_MENU : 4,
+	PAUSED : 5,
 };
 var CurrentGameState = GameState.START_MENU;
 var SETTINGS_PLAYER_COLOR = 0;
@@ -171,7 +173,7 @@ var displayHelpMenu = function() {
     fill(199, 197, 197, 50);
     rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
     fill(0);
-    var instructions = "Jan awakens to finds herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
+    var instructions = "Jan awakens to find herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
     textSize(14);
     text(instructions, 55, 180, 280, 95);
     
@@ -353,6 +355,175 @@ var displayOptionsMenu = function() {
 
 /* --------------------- END Menu Views --------------------- \*/
 
+/* --------------------- GAME Variables --------------------- \*/
+var TILE_SIZE = 40;
+var NUM_TILES = 400/TILE_SIZE;
+
+/* --------------------- GAME CLASSES --------------------- \*/
+/***************************************************************************
+					TILEMAP CLASS
+***************************************************************************/
+var Tilemap = function(tm) {
+	this.TM = tm;
+	this.walls = [];
+	
+	this.size = TILE_SIZE;
+	
+	// Initialize Walls list
+	for (var row = 0; row < this.TM.length; row++) {
+        for (var col = 0; col < this.TM[row].length; col++) {
+            switch(this.TM[row][col]) {
+                case 'w':
+                    this.walls.push({x:col*this.size, y:row*this.size});
+                    break;
+                default:
+                    // Do nothing
+            }
+        }
+    }
+};
+
+Tilemap.prototype.drawWall = function(x, y) {
+    image(getImage("cute/WallBlockTall"), x, y, this.size, this.size);
+};
+
+Tilemap.prototype.draw = function(){
+    /*for (var row = 0; row < this.TM.length; row++) {
+        for (var col = 0; col < this.TM[row].length; col++) {
+            switch(this.TM[row][col]) {
+                case 'w':
+                    this.drawWall(col*this.size, row*this.size);
+                    break;
+                default:
+                    // Do nothing
+            }
+        }
+    }*/
+    for (var i = 0; i < this.walls.length; i++) {
+        this.drawWall(this.walls[i].x, this.walls[i].y);
+    }
+};
+
+Tilemap.prototype.getTileTypeAtTile = function(tile) {
+	return this.TM[tile.row][tile.col];
+};
+
+Tilemap.prototype.tileIsFree = function(tile) {
+	// Check tile is in bounds
+	if (tile.row <= 0 || tile.col <= 0 || tile.row >= NUM_TILES || tile.col >= NUM_TILES) {
+		return false;
+	}
+	
+	return this.getTileTypeAtTile(tile) === ' ';
+};
+
+Tilemap.prototype.getAdjacentTiles = function(tile) {
+	var adjacentTiles = [];
+	
+	var north = {'row':tile.row-1, 'col':tile.col};
+	var east = {'row':tile.row, 'col':tile.col+1};
+	var south = {'row':tile.row+1, 'col':tile.col};
+	var west = {'row':tile.row, 'col':tile.col-1};
+	
+	if (this.tileIsFree(north)) {
+		adjacentTiles.push(north);
+	}
+	
+	if (this.tileIsFree(east)) {
+		adjacentTiles.push(east);
+	}
+	
+	if (this.tileIsFree(south)) {
+		adjacentTiles.push(south);
+	}
+	
+	if (this.tileIsFree(west)) {
+		adjacentTiles.push(west);
+	}
+	
+	return adjacentTiles;
+};
+
+// Param: Coord - {x: _, y: _}
+// Return: tile - {row: _, col: _}
+Tilemap.getTileFromCoordinate = function(coordinate) {
+    //return {'row': Math.floor(Coord.y/this.size), 'col': Math.floor(Coord.x/this.size)};
+    return {'row': Math.floor(coordinate.y/TILE_SIZE), 'col': Math.floor(coordinate.x/TILE_SIZE)};
+};
+
+// Param: tile - {row: _, col: _}
+// Param: position - 0 = CENTER, 1 = TOP-LEFT-CORNER
+// Return: Coord - {x: _, y: _} Note: returns the CENTER-Coord of the tile by default
+Tilemap.getCoordinateFromTile = function(tile, position) {
+    //return {'x': tile.col*this.size+(this.size/2), 'y': tile.row*this.size+(this.size/2)};
+	position = position || 0;
+	if (position === 0) {
+		return {'x': tile.col*TILE_SIZE + TILE_SIZE/2, 'y': tile.row*TILE_SIZE + TILE_SIZE/2};
+	}
+	else if (position === 1) {
+		return {'x': tile.col*TILE_SIZE, 'y': tile.row*TILE_SIZE};
+	}
+};
+/* --------------------- END TILEMAP CLASS --------------------- \*/
+
+/* --------------------- END GAME CLASSES --------------------- \*/
+var TM_str = ["wwwwwwwwwwwwwwwwwwww",
+    "w          ww      w",
+    "w wwwwwwww    w  www",
+    "w wwww     wwww wwww",
+    "w      wwwwwwww    w",
+    "w wwww          wwww",
+    "w      wwwwwwww    w",
+    "wwwwww wwwww    wwww",
+    "w  ww    wwwwww   ww",
+    "w  wwwww   ww   wwww",
+    "w      www  ww w   w",
+    "w  wwwwwww       www",
+    "w  www     wwww wwww",
+    "w      wwwwwwww    w",
+    "w wwww          wwww",
+    "w      wwwwwwww    w",
+    "wwwwww wwwww    wwww",
+    "w  ww    w   ww   ww",
+    "w     ww    ww  wwww",
+    "wwwwwwwwwwwwwwwwwwww"];
+var TM = new Tilemap(TM_str);
+
+var pauseContinueButton = new Button(200, 200, "Continue");
+var pauseHelpButton = new Button(200, 250, "Help");
+var pauseExitButton = new Button(200, 300, "Exit");
+var displayPauseMenu = function() {
+	background(0);
+	TM.draw();
+	noStroke();
+	fill(224, 224, 224, 150);
+	rect(0, 0, 400, 400);
+	
+	// State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 100;
+    var CONTENT_Y2 = 340;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    fill(245, 245, 245, 250);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+	
+	fill(0);
+	textSize(30);
+    text("Paused", 200, 140);
+    
+    stroke(0);
+    pauseContinueButton.draw();
+    pauseHelpButton.draw();
+    pauseExitButton.draw();
+};
+
 /* --------------------- User Control --------------------- \*/
 var mouseClicked = function() {
     switch(CurrentGameState) {
@@ -391,16 +562,49 @@ var mouseClicked = function() {
             optionsMouseCallback();   
         }
         break;
+    case GameState.PAUSED:
+        if (pauseContinueButton.mouseIsOnMe()) {
+            CurrentGameState = GameState.PLAYING;
+        }
+        else if (pauseHelpButton.mouseIsOnMe()) {
+            // CurrentGameState = GameState.HELP_MENU; TODO add way back to play game
+        }
+        else if (pauseExitButton.mouseIsOnMe()) {
+            // TODO: Reset all Game variables
+            CurrentGameState = GameState.START_MENU;
+        }
+        break;
     default:
         break;
     }
 };
 
+keyPressed = function() {
+	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
+		KEYS[keyCode] = 1;
+	}
+};
+
 /* --------------------- END User Control --------------------- \*/
+
+var playGame = function() {
+	background(0);
+    TM.draw();
+};
 
 var draw = function() {
     cursor(ARROW);
     switch(CurrentGameState) {
+		case GameState.PLAYING:
+			playGame();
+			if (KEYS[80] === 1) {
+				CurrentGameState = GameState.PAUSED;
+				KEYS[80] = 0;
+			}
+			break;
+		case GameState.PAUSED:
+			displayPauseMenu();
+			break;
         case GameState.START_MENU:
             displayStartMenu();
             break;
@@ -421,4 +625,4 @@ var draw = function() {
 
 /* --------------------- END PROGRAM CODE --------------------- \*/
 
-}};
+//}};
