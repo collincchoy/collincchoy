@@ -409,7 +409,7 @@ var average = function(p2, pts) {
 
 var subdivide = function(pts) {
 	var intermed = splitPoints(pts);
-	this.average(intermed, pts);
+	average(intermed, pts);
 }; 
 
 var drawShapeFromVertices = function(vertices, notClosed) {
