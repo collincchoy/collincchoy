@@ -1,6 +1,6 @@
-/*var sketchProc=function(processingInstance){ with (processingInstance){
+var sketchProc=function(processingInstance){ with (processingInstance){
 size(400, 400); 
-frameRate(60);*/
+frameRate(60);
 
 /* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
 
@@ -1174,4 +1174,4 @@ var draw = function() {
 
 /* --------------------- END PROGRAM CODE --------------------- \*/
 
-//}};
+}};
