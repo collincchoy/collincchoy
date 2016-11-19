@@ -91,16 +91,12 @@ var PlayerStates = {
 	FALLING : 6,
 };
 
-var StandbyState = function() {
-    
-};
-
+var StandbyState = function() {};
 StandbyState.prototype.execute = function(self) {
 	self.armAngleReset();
 };
 
 var MoveRightState = function() {};
-
 MoveRightState.prototype.execute = function(self) {
 	debug('MoveRightState executing...');
 	self.walk();
@@ -108,16 +104,12 @@ MoveRightState.prototype.execute = function(self) {
 };
 
 var MoveLeftState = function() {};
-
 MoveLeftState.prototype.execute = function(self) {
     debug('MoveLeftState executing...');
     self.position.x -= self.movementSpeed;
 };
 
-var JumpState = function() {
-    this.jumpForce = new PVector(0, -15);
-};
-
+var JumpState = function() {this.jumpForce = new PVector(0, -15);};
 JumpState.prototype.execute = function(self) {
     debug('jumping');
 	self.applyForce(this.jumpForce);
@@ -125,28 +117,19 @@ JumpState.prototype.execute = function(self) {
 	self.currentState = PlayerStates.FALLING;
 };
 
-var JumpRightState = function() {
-    
-};
-
+var JumpRightState = function() {};
 JumpRightState.prototype.execute = function(self) {
 	debug('JumpRightState executing...');
 	self.position.x += self.movementSpeed/2;
 };
 
-var JumpLeftState = function() {
-    
-};
-
+var JumpLeftState = function() {};
 JumpLeftState.prototype.execute = function(self) {
 	debug('JumpLeftState executing...');
 	self.position.x -= self.movementSpeed/2;
 };
 
-var FallingState = function() {
-	
-};
-
+var FallingState = function() {};
 FallingState.prototype.execute = function(self) {
 	debug('FallingState executing...');
 };
