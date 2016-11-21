@@ -457,9 +457,9 @@ var Player = function(x, y) {
 	
 	this.movementSpeed = 5;
 	
-	this.armAngle = 0;
+	this.armAngle = 0;	
 	
-	this.falling = false;
+	this.playerColor = color(236, 166, 35);
 	
 	this.currentState = PlayerStates.STANDBY;
 	this.STATES = [new StandbyState(), new MoveRightState(), new MoveLeftState(), new JumpState(), new JumpRightState(), new JumpLeftState(), new FallingState()];
@@ -487,6 +487,15 @@ Player.prototype.constructor = Player;
 
 Player.prototype.changeState = function(nextState) {
 	this.currentState = nextState;
+};
+
+Player.prototype.changeColor = function(col) {
+	this.playerColor = (col === 0) ? color(236, 165, 15) :
+						(col === 1) ? color(185, 0, 0) :
+                    (col === 2) ? color(80, 0, 255) :
+                    (col === 3) ? color(150, 200, 20) :
+                    (col === 4) ? color(228, 232, 16) : 
+									color(236, 165, 15);
 };
 
 Player.prototype.getBootVertices = function(center_X, center_Y) {
@@ -982,6 +991,21 @@ StartMenuState.prototype.display = function() {
     this.bigJan.walk();
     this.bigJan.draw();
     
+	// State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 160;
+    var CONTENT_Y2 = 340;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    fill(199, 197, 197, 50);
+    noStroke();
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+	
     fill(0);
     stroke(0);
     
@@ -1144,6 +1168,7 @@ OptionsMenuState.prototype.MouseCallback = function() {
             if (this.playerColorSelector.items[i].mouseIsOnMe()) {
                 this.playerColorSelector.setSelectedIndex(i);
                 this.SETTINGS_PLAYER_COLOR = i;
+				//Jan.changePlayerColor(this.SETTINGS_PLAYER_COLOR);
                 break;
             }
         }
