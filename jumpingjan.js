@@ -857,6 +857,7 @@ var StartMenuState = function() {
     this.a=random(1500);
     this.mountains = 0; 
     this.sun = new Sun();
+    this.bigJan = new Player(200, 350);
     
 	this.playButton = new Button(200, 200, "Play");
 	this.helpButton = new Button(200, 250, "Help");
@@ -977,6 +978,9 @@ StartMenuState.prototype.display = function() {
     background(255, 255, 255);
     
     this.drawBackground();
+    this.bigJan.size = 150;
+    this.bigJan.walk();
+    this.bigJan.draw();
     
     fill(0);
     stroke(0);
