@@ -8,17 +8,6 @@ angleMode = 'radians';
 var KEYS = [];
 textAlign(CENTER, CENTER);
 
-var GameState = {
-    START_MENU : 0,
-    PLAYING : 1,
-    HELP_MENU : 2,
-    OPTIONS_MENU : 3,
-    CONTROLS_MENU : 4,
-	PAUSED : 5,
-};
-var CurrentGameState = GameState.START_MENU;
-var SETTINGS_PLAYER_COLOR = 0;
-
 /* --------------------- Button Object --------------------- \*/
 
 var Button = function(x, y, txt) {
@@ -131,104 +120,7 @@ ArrowButton.prototype.getVertices = function() {
 
 };
 
-/* --------------------- Menu Views --------------------- \*/
-var playButton = new Button(200, 200, "Play");
-var helpButton = new Button(200, 250, "Help");
-var optionsButton = new Button(200, 300, "Options");
-var help_nextButton = new ArrowButton(350, 350, "Next");
-var controls_backButton = new ArrowButton(50, 350, "Back", -1);
-var menuButton = new Button(200, 350, "Menu");
-var displayStartMenu = function() {
-    background(255, 255, 255);
-    fill(0);
-    
-    textSize(50);
-    text("Jumping Jan", 200, 80);
-    
-    textSize(20);
-    text("Collin C. Choy", 75, 380);
-    
-    playButton.draw();
-    helpButton.draw();
-    optionsButton.draw();
-};
-
-var displayHelpMenu = function() {
-    background(255, 0, 0, 10);
-    fill(0);
-    textSize(30);
-    text("Instructions", 200, 140);
-    
-    // State Constants
-    var CONTENT_X1 = 50;
-    var CONTENT_X2 = 350;
-    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
-    
-    var CONTENT_Y1 = 180;
-    var CONTENT_Y2 = 280;
-    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
-    
-    // Content Box
-    stroke(0);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
-    var instructions = "Jan awakens to find herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
-    textSize(14);
-    text(instructions, 55, 180, 280, 95);
-    
-    help_nextButton.draw();
-};
-
-var drawKey = function(x, y, label, width) {
-    var KEY_SIZE_W = width || 20;
-    var KEY_SIZE_H = 20;
-    fill(245, 245, 245);
-    rect(x-KEY_SIZE_W/2, y-KEY_SIZE_H/2, KEY_SIZE_W, KEY_SIZE_H);
-    
-    fill(0);
-    text(label, x, y);
-};
-
-var displayControlsMenu = function() {
-    background(20, 200, 0, 10);
-    fill(0);
-    textSize(30);
-    text("Controls", 200, 140);
-    
-    // State Constants
-    var CONTENT_X1 = 50;
-    var CONTENT_X2 = 350;
-    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
-    
-    var CONTENT_Y1 = 180;
-    var CONTENT_Y2 = 280;
-    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
-    
-    // Content Box
-    stroke(0);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
-    textSize(14);
-
-    // AWSD Movement
-    drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'W');
-    drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H)+25, 'S');
-    drawKey(CONTENT_X1+(0.25*CONTENT_W)-25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'A');
-    drawKey(CONTENT_X1+(0.25*CONTENT_W)+25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'D');
-    text("Move Jan", CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.8*CONTENT_H));
-    
-    drawKey(CONTENT_X1+(0.75*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'P');
-    drawKey(CONTENT_X1+(0.75*CONTENT_W)-15, CONTENT_Y1+(0.7*CONTENT_H), "Space", 50);
-    textAlign(LEFT, CENTER);
-    text("Pause", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.3*CONTENT_H));
-    text("Action", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.7*CONTENT_H));
-    
-    textAlign(CENTER, CENTER);
-    controls_backButton.draw();
-    menuButton.draw();
-};
+/* --------------------- Color Selector Object --------------------- \*/
 
 var ColorSelectorBox = function(x, y, col) {
     this.position = new PVector(x, y);
@@ -304,56 +196,41 @@ ColorSelector.prototype.draw = function() {
     }
 };
 
-var playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
-    playerColorSelector.add('r');
-    playerColorSelector.add('b');
-    playerColorSelector.add('g');
-    playerColorSelector.add('y');
-var optionsMouseCallback = function() {
-    if (playerColorSelector.mouseIsOnMe()) {
-        for (var i = 0; i < playerColorSelector.items.length; i++) {
-            if (playerColorSelector.items[i].mouseIsOnMe()) {
-                playerColorSelector.setSelectedIndex(i);
-                SETTINGS_PLAYER_COLOR = i;
-                break;
-            }
+var Sun = function() {this.ang = 0; this.maxRayLength = 20;};
+
+Sun.prototype.drawRay = function(len, ang) {
+    pushMatrix();
+    rotate(ang);
+    var a = len;//random(30);
+    stroke(217, 222, 69);
+    //point((x < 130) ? x++ : , 0);
+    line(100, 0, 100+a, 0);
+    popMatrix();
+};
+
+Sun.prototype.draw = function() {
+    strokeWeight(2);
+    fill(217, 222, 69);
+    pushMatrix(); 
+    translate(400, 0);
+    rotate(this.ang+=0.01);
+    var cnt = 5;
+    var curL = 0;
+    for (var i = 0; i < TWO_PI; i += PI/128) {
+        if (curL > cnt) {
+            curL = -cnt;
         }
+        else if (curL === 0) {
+            //curL++;
+        }
+        
+        var len = (++curL < 0) ? -curL : curL;
+        this.drawRay(this.maxRayLength/len, i);
     }
+    
+    ellipse(0, 0, 200, 200);
+    popMatrix();
 };
-
-var displayOptionsMenu = function() {
-    background(0, 100, 200, 10);
-    fill(0);
-    textSize(30);
-    text("Options", 200, 140);
-    
-    // State Constants
-    var CONTENT_X1 = 50;
-    var CONTENT_X2 = 350;
-    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
-    
-    var CONTENT_Y1 = 180;
-    var CONTENT_Y2 = 280;
-    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
-    
-    // Content Box
-    stroke(0);
-    strokeWeight(1);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
-    textSize(14);
-    
-    text("Player Color: ", CONTENT_X1+(0.2*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H));
-
-    playerColorSelector.setSelectedIndex(SETTINGS_PLAYER_COLOR);
-    
-    playerColorSelector.draw();
-    
-    menuButton.draw();
-};
-
-/* --------------------- END Menu Views --------------------- \*/
 
 /* --------------------- GAME Variables --------------------- \*/
 var TILE_SIZE = 40;
@@ -967,6 +844,58 @@ Tilemap.getCoordinateFromTile = function(tile, position) {
 /* --------------------- END TILEMAP CLASS --------------------- \*/
 
 /* --------------------- END GAME CLASSES --------------------- \*/
+var GameState = {
+    START_MENU : 0,
+    PLAYING : 1,
+    HELP_MENU : 2,
+    OPTIONS_MENU : 3,
+    CONTROLS_MENU : 4,
+	PAUSED : 5,
+};
+
+var StartMenuState = function() {
+    this.a=random(1500);
+    this.mountains = 0; 
+    this.sun = new Sun();
+    
+	this.playButton = new Button(200, 200, "Play");
+	this.helpButton = new Button(200, 250, "Help");
+	this.optionsButton = new Button(200, 300, "Options");
+};
+var PlayingState = function() {
+	this.hadCollision = false;
+	this.Jan = new Player(100, 200);
+	this.gravity = new PVector(0,0.4);
+};
+var HelpMenuState = function() {
+	this.nextButton = new ArrowButton(350, 350, "Next");
+};
+var OptionsMenuState = function() {
+    this.SETTINGS_PLAYER_COLOR = 0;
+    
+    this.menuButton = new Button(200, 350, "Menu");
+    
+	this.playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
+    this.playerColorSelector.add('r');
+    this.playerColorSelector.add('b');
+    this.playerColorSelector.add('g');
+    this.playerColorSelector.add('y');
+};
+OptionsMenuState.prototype.getSelectedPlayerColor = function() {return this.SETTINGS_PLAYER_COLOR;};
+var ControlsMenuState = function() {
+	this.backButton = new ArrowButton(50, 350, "Back", -1);
+	this.menuButton = new Button(200, 350, "Menu");
+};
+var PausedState = function() {
+    this.continueButton = new Button(200, 200, "Continue");
+    this.helpButton = new Button(200, 250, "Help");
+    this.exitButton = new Button(200, 300, "Exit");
+};
+
+var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState()];
+
+var CurrentGameState = GameState.START_MENU;
+
 var TM_wallsample = ["wwwwwwwwwwwwwwwwwwww",
     "w          ww      w",
     "w wwwwwwww    w  www",
@@ -1001,10 +930,224 @@ var TM_sample10x10 = ["pppp    pp",
 
 var TM = new Tilemap(TM_sample10x10);
 
-var pauseContinueButton = new Button(200, 200, "Continue");
-var pauseHelpButton = new Button(200, 250, "Help");
-var pauseExitButton = new Button(200, 300, "Exit");
-var displayPauseMenu = function() {
+/* --------------------- Menu Views --------------------- \*/
+StartMenuState.prototype.setMountains = function() {
+    this.mountains = [[],[],[],[],[],[]]; 
+    for (var i=0; i<=5; i++) {
+        for (var j=0; j<=40; j++) {
+            var n = noise(this.a);
+            this.mountains[i][j] = map(n,0,1,0,400-i*50);
+            this.a += 0.025;  // ruggedness
+        }
+    }  
+};
+
+StartMenuState.prototype.drawBackground = function() {
+    noStroke();
+    if (this.mountains === 0) {
+        this.setMountains();
+    }
+    // sky
+    var n1 = this.a;  
+    for (var x=0; x<=400; x+=8) {
+        var n2 = 0;
+        for (var y=0; y<=250; y+=8) {
+            var c = map(noise(n1,n2),0,1,0,255);
+            fill(c, c, c+70,150);
+            rect(x,y,8,8);
+            n2 += 0.05; // step size in noise
+        }
+        n1 += 0.02; // step size in noise
+    }
+    this.a -= 0.01;  // speed of clouds
+    
+    // mountains
+    for (x=0; x<=5; x++) {
+        for (var y=0; y<=40; y++) {
+            fill(10 + x*5, 40+x*10, 0);
+            // draw quads of width 10 pixels
+            quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
+        }
+    }
+    
+    this.sun.draw();
+};
+
+StartMenuState.prototype.display = function() {
+    background(255, 255, 255);
+    
+    this.drawBackground();
+    
+    fill(0);
+    stroke(0);
+    
+    textSize(50);
+    text("Jumping Jan", 200, 80);
+    
+    textSize(20);
+    text("Collin C. Choy", 75, 380);
+    
+    this.playButton.draw();
+    this.helpButton.draw();
+    this.optionsButton.draw();
+};
+
+StartMenuState.prototype.MouseCallback = function() {
+    if (this.playButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.PLAYING;   
+    }
+    else if (this.helpButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.HELP_MENU;
+    }
+    else if (this.optionsButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.OPTIONS_MENU;   
+    }
+};
+
+//var displayHelpMenu = function() {
+HelpMenuState.prototype.display = function() {
+    background(255, 0, 0, 10);
+    fill(0);
+    textSize(30);
+    text("Instructions", 200, 140);
+    
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    fill(199, 197, 197, 50);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+    var instructions = "Jan awakens to find herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
+    textSize(14);
+    text(instructions, 55, 180, 280, 95);
+    
+    this.nextButton.draw();
+};
+
+HelpMenuState.prototype.MouseCallback = function() {
+    if (this.nextButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.CONTROLS_MENU;
+    }
+};
+
+ControlsMenuState.prototype.drawKey = function(x, y, label, width) {
+    var KEY_SIZE_W = width || 20;
+    var KEY_SIZE_H = 20;
+    fill(245, 245, 245);
+    rect(x-KEY_SIZE_W/2, y-KEY_SIZE_H/2, KEY_SIZE_W, KEY_SIZE_H);
+    
+    fill(0);
+    text(label, x, y);
+};
+
+//var displayControlsMenu = function() {
+ControlsMenuState.prototype.display = function() {
+    background(20, 200, 0, 10);
+    fill(0);
+    textSize(30);
+    text("Controls", 200, 140);
+    
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    fill(199, 197, 197, 50);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+    textSize(14);
+
+    // AWSD Movement
+    this.drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'W');
+    this.drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H)+25, 'S');
+    this.drawKey(CONTENT_X1+(0.25*CONTENT_W)-25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'A');
+    this.drawKey(CONTENT_X1+(0.25*CONTENT_W)+25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'D');
+    text("Move Jan", CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.8*CONTENT_H));
+    
+    this.drawKey(CONTENT_X1+(0.75*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'P');
+    this.drawKey(CONTENT_X1+(0.75*CONTENT_W)-15, CONTENT_Y1+(0.7*CONTENT_H), "Space", 50);
+    textAlign(LEFT, CENTER);
+    text("Pause", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.3*CONTENT_H));
+    text("Action", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.7*CONTENT_H));
+    
+    textAlign(CENTER, CENTER);
+    this.backButton.draw();
+    this.menuButton.draw();
+};
+
+ControlsMenuState.prototype.MouseCallback = function() {
+    if (this.backButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.HELP_MENU;
+    }
+    else if (this.menuButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.START_MENU;   
+    }
+};
+
+//var displayOptionsMenu = function() {
+OptionsMenuState.prototype.display = function() {
+    background(0, 100, 200, 10);
+    fill(0);
+    textSize(30);
+    text("Options", 200, 140);
+    
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 180;
+    var CONTENT_Y2 = 280;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    strokeWeight(1);
+    fill(199, 197, 197, 50);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+    textSize(14);
+    
+    text("Player Color: ", CONTENT_X1+(0.2*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H));
+
+    this.playerColorSelector.setSelectedIndex(this.SETTINGS_PLAYER_COLOR);
+    
+    this.playerColorSelector.draw();
+    
+    this.menuButton.draw();
+};
+
+OptionsMenuState.prototype.MouseCallback = function() {
+    if (this.menuButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.START_MENU;   
+    }
+    else if (this.playerColorSelector.mouseIsOnMe()) {
+        for (var i = 0; i < this.playerColorSelector.items.length; i++) {
+            if (this.playerColorSelector.items[i].mouseIsOnMe()) {
+                this.playerColorSelector.setSelectedIndex(i);
+                this.SETTINGS_PLAYER_COLOR = i;
+                break;
+            }
+        }
+    }
+};
+
+//var displayPauseMenu = function() {
+PausedState.prototype.display = function() {
 	background(0);
 	TM.draw();
 	noStroke();
@@ -1031,64 +1174,66 @@ var displayPauseMenu = function() {
     text("Paused", 200, 140);
     
     stroke(0);
-    pauseContinueButton.draw();
-    pauseHelpButton.draw();
-    pauseExitButton.draw();
+    this.continueButton.draw();
+    this.helpButton.draw();
+    this.exitButton.draw();
 };
+
+PausedState.prototype.MouseCallback = function() {
+    if (this.continueButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.PLAYING;
+    }
+    else if (this.helpButton.mouseIsOnMe()) {
+        // CurrentGameState = GameState.HELP_MENU; TODO add way back to play game
+    }
+    else if (this.exitButton.mouseIsOnMe()) {
+        // TODO: Reset all Game variables
+        CurrentGameState = GameState.START_MENU;
+    }  
+};
+
+//var playGame = function() {
+PlayingState.prototype.display = function() {
+	background(0);
+    TM.draw();
+	
+	var collisionDetected = false;
+	for (var i = 0; i < TM.platforms.length; i++) {
+		collisionDetected = this.Jan.checkCollision(TM.platforms[i]);
+		if (collisionDetected) {
+		    break;
+		}
+	}
+	
+	if(!collisionDetected) {
+	    this.Jan.applyForce(this.gravity);
+	    this.hadCollision = false;
+    }
+    else {
+        if (!this.hadCollision) {
+            this.Jan.velocity.set(0,0); 
+            this.hadCollision = true;
+			if (this.Jan.currentState === PlayerStates.FALLING) {
+				this.Jan.jumpReset();
+				this.Jan.changeState(PlayerStates.STANDBY);
+			}
+        }
+    }
+	
+	this.Jan.update();
+	this.Jan.draw();
+	
+	if (KEYS[80] === 1) {
+		CurrentGameState = GameState.PAUSED;
+		KEYS[80] = 0;
+	}
+};
+
+/* --------------------- END Menu Views --------------------- \*/
 
 /* --------------------- User Control --------------------- \*/
 var mouseClicked = function() {
-    switch(CurrentGameState) {
-    case GameState.START_MENU:
-        if (playButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.PLAYING;   
-        }
-        else if (helpButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.HELP_MENU;
-        }
-        else if (optionsButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.OPTIONS_MENU;   
-        }
-        break;
-    
-    case GameState.HELP_MENU:
-        if (help_nextButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.CONTROLS_MENU;
-        }
-        break;
-        
-    case GameState.CONTROLS_MENU:
-        if (controls_backButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.HELP_MENU;
-        }
-        else if (menuButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.START_MENU;   
-        }
-        break;
-        
-    case GameState.OPTIONS_MENU:
-        if (menuButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.START_MENU;   
-        }
-        else {
-            optionsMouseCallback();   
-        }
-        break;
-    case GameState.PAUSED:
-        if (pauseContinueButton.mouseIsOnMe()) {
-            CurrentGameState = GameState.PLAYING;
-        }
-        else if (pauseHelpButton.mouseIsOnMe()) {
-            // CurrentGameState = GameState.HELP_MENU; TODO add way back to play game
-        }
-        else if (pauseExitButton.mouseIsOnMe()) {
-            // TODO: Reset all Game variables
-            CurrentGameState = GameState.START_MENU;
-        }
-        break;
-    default:
-        break;
-    }
+    GameStates[CurrentGameState].MouseCallback();
 };
 
 keyPressed = function() {
@@ -1098,71 +1243,10 @@ keyPressed = function() {
 };
 
 /* --------------------- END User Control --------------------- \*/
-var hadCollision = false;
-var Jan = new Player(100, 200);
-var gravity = new PVector(0,0.4);
-
-var playGame = function() {
-	background(0);
-    TM.draw();
-	
-	var collisionDetected = false;
-	for (var i = 0; i < TM.platforms.length; i++) {
-		collisionDetected = Jan.checkCollision(TM.platforms[i]);
-		if (collisionDetected) {
-		    break;
-		}
-	}
-	
-	if(!collisionDetected) {
-	    Jan.applyForce(gravity);
-	    hadCollision = false;
-    }
-    else {
-        if (!hadCollision) {
-            Jan.velocity.set(0,0); 
-            hadCollision = true;
-			if (Jan.currentState === PlayerStates.FALLING) {
-				Jan.jumpReset();
-				Jan.changeState(PlayerStates.STANDBY);
-			}
-        }
-    }
-	
-	Jan.update();
-	Jan.draw();
-	
-};
-
 var draw = function() {
     cursor(ARROW);
-    switch(CurrentGameState) {
-		case GameState.PLAYING:
-			playGame();
-			if (KEYS[80] === 1) {
-				CurrentGameState = GameState.PAUSED;
-				KEYS[80] = 0;
-			}
-			break;
-		case GameState.PAUSED:
-			displayPauseMenu();
-			break;
-        case GameState.START_MENU:
-            displayStartMenu();
-            break;
-        case GameState.HELP_MENU:
-            displayHelpMenu();
-            break;
-        case GameState.OPTIONS_MENU:
-            displayOptionsMenu();
-            break;
-        case GameState.CONTROLS_MENU:
-            displayControlsMenu();
-            break;
-        default:
-            CurrentGameState = GameState.START_MENU;
-            // Should not reach default case
-    }
+
+	GameStates[CurrentGameState].display();
 };
 
 /* --------------------- END PROGRAM CODE --------------------- \*/
