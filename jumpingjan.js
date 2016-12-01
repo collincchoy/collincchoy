@@ -349,10 +349,15 @@ Mover.prototype.checkCollision = function(mover) {
     var otherEdges = mover.getBoundingBoxEdges();
     var scaleFactor = this.getScaleFactor();
     
-    var l1 = new Coord(myEdges.top*scaleFactor, myEdges.left*scaleFactor);
+    /*var l1 = new Coord(myEdges.top*scaleFactor, myEdges.left*scaleFactor);
     var r1 = new Coord(myEdges.bottom*scaleFactor, myEdges.right*scaleFactor);
     var l2 = new Coord(otherEdges.top*scaleFactor, otherEdges.left*scaleFactor);
-    var r2 = new Coord(otherEdges.bottom*scaleFactor, otherEdges.right*scaleFactor);
+    var r2 = new Coord(otherEdges.bottom*scaleFactor, otherEdges.right*scaleFactor);*/
+	
+	var l1 = new Coord(myEdges.left*scaleFactor, myEdges.top*scaleFactor);
+    var r1 = new Coord(myEdges.right*scaleFactor, myEdges.bottom*scaleFactor);
+    var l2 = new Coord(otherEdges.left*scaleFactor, otherEdges.top*scaleFactor);
+    var r2 = new Coord(otherEdges.right*scaleFactor, otherEdges.bottom*scaleFactor);
     
     if (l1.compare(r2) === 1 || l2.compare(r1) === 1) {
         return false;   
@@ -362,12 +367,36 @@ Mover.prototype.checkCollision = function(mover) {
         return false;   
     }
     
-    if ((r1.x < l2.x && r1.y < l2.y) || (l1.x > r2.x && l1.y > r2.y)) {
+    if ((r1.x <= l2.x && r1.y <= l2.y) || (l1.x >= r2.x && l1.y >= r2.y)) {
         return false;
     }
     
     return true;
 };
+
+//Mover.prototype.resolveCollision = function(A, B) {
+//	// Calculate relative velocity
+//	var rv = B.velocity.sub(A.velocity)
+//
+//	// Calculate relative velocity in terms of the normal direction
+//	float velAlongNormal = DotProduct( rv, normal )
+//
+//	// Do not resolve if velocities are separating
+//	if(velAlongNormal > 0)
+//	return;
+//
+//	// Calculate restitution
+//	float e = min( A.restitution, B.restitution)
+//
+//	// Calculate impulse scalar
+//	float j = -(1 + e) * velAlongNormal
+//	j /= 1 / A.mass + 1 / B.mass
+//
+//	// Apply impulse
+//	Vec2 impulse = j * normal
+//	A.velocity -= 1 / A.mass * impulse
+//	B.velocity += 1 / B.mass * impulse
+//};
 
 /***************************************************************************
 					PLATFORM CLASS
@@ -862,17 +891,6 @@ Tilemap.prototype.drawWall = function(x, y) {
 };
 
 Tilemap.prototype.draw = function(){
-    /*for (var row = 0; row < this.TM.length; row++) {
-        for (var col = 0; col < this.TM[row].length; col++) {
-            switch(this.TM[row][col]) {
-                case 'w':
-                    this.drawWall(col*this.size, row*this.size);
-                    break;
-                default:
-                    // Do nothing
-            }
-        }
-    }*/
     for (var i = 0; i < this.walls.length; i++) {
         this.drawWall(this.walls[i].x, this.walls[i].y);
     }
@@ -925,7 +943,6 @@ Tilemap.prototype.getAdjacentTiles = function(tile) {
 // Param: Coord - {x: _, y: _}
 // Return: tile - {row: _, col: _}
 Tilemap.getTileFromCoordinate = function(coordinate) {
-    //return {'row': Math.floor(Coord.y/this.size), 'col': Math.floor(Coord.x/this.size)};
     return {'row': Math.floor(coordinate.y/TILE_SIZE), 'col': Math.floor(coordinate.x/TILE_SIZE)};
 };
 
@@ -933,7 +950,6 @@ Tilemap.getTileFromCoordinate = function(coordinate) {
 // Param: position - 0 = CENTER, 1 = TOP-LEFT-CORNER
 // Return: Coord - {x: _, y: _} Note: returns the CENTER-Coord of the tile by default
 Tilemap.getCoordinateFromTile = function(tile, position) {
-    //return {'x': tile.col*this.size+(this.size/2), 'y': tile.row*this.size+(this.size/2)};
 	position = position || 0;
 	if (position === 0) {
 		return {'x': tile.col*TILE_SIZE + TILE_SIZE/2, 'y': tile.row*TILE_SIZE + TILE_SIZE/2};
@@ -1024,7 +1040,7 @@ var TM_sample10x10 = ["pppp    pp",
 				 "          ",
 				 "p  p p    ",
 				 " p    p   ",
-				 "          ",
+				 "         p",
 				 "pppppppppp"];	
 
 var TM = new Tilemap(TM_sample10x10);
@@ -1317,18 +1333,24 @@ PlayingState.prototype.display = function() {
 	this.Jan.changeColor(SETTINGS_PLAYER_COLOR);
 	
 	var collisionDetected = false;
+	var collidedObject = 0;
 	for (var i = 0; i < TM.platforms.length; i++) {
 		collisionDetected = this.Jan.checkCollision(TM.platforms[i]);
 		if (collisionDetected) {
+			collidedObject = TM.platforms[i];
 		    break;
 		}
 	}
 	
 	if(!collisionDetected) {
+		console.log('X');
 	    this.Jan.applyForce(this.gravity);
 	    this.hadCollision = false;
     }
     else {
+		console.log('COLLISSION DETECTED');
+		fill(255, 0, 0);
+		ellipse(collidedObject.position.x, collidedObject.position.y, 30, 30);
         if (!this.hadCollision) {
             this.Jan.velocity.set(0,0); 
             this.hadCollision = true;
