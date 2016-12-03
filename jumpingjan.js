@@ -6,6 +6,7 @@ frameRate(60);
 
 angleMode = 'radians';
 var KEYS = [];
+var GRAVITY = new PVector(0,0.6); // TODO remove
 textAlign(CENTER, CENTER);
 
 /* --------------------- Button Object --------------------- \*/
@@ -320,6 +321,7 @@ var rotateAroundPoint = function(p1, p2, n) {
 ***************************************************************************/
 var Mover = function(x, y) {
 	this.position = new PVector(x, y);
+	this.nextPosition = new PVector();
 	this.velocity = new PVector(0, 0);
 	this.acceleration = new PVector(0, 0);
 	
@@ -329,6 +331,12 @@ var Mover = function(x, y) {
 	this.size = TILE_SIZE;
 	
 	this.movementSpeed = 0;
+	
+	this.restitution = 0;
+	
+	this.isAffectedByGravity = false;
+	this.isAffectedByCollisions = false;
+	this.onGround = false;
 };
 
 Mover.prototype.applyForce = function(force) {
@@ -348,11 +356,6 @@ Mover.prototype.checkCollision = function(mover) {
 
     var otherEdges = mover.getBoundingBoxEdges();
     var scaleFactor = this.getScaleFactor();
-    
-    /*var l1 = new Coord(myEdges.top*scaleFactor, myEdges.left*scaleFactor);
-    var r1 = new Coord(myEdges.bottom*scaleFactor, myEdges.right*scaleFactor);
-    var l2 = new Coord(otherEdges.top*scaleFactor, otherEdges.left*scaleFactor);
-    var r2 = new Coord(otherEdges.bottom*scaleFactor, otherEdges.right*scaleFactor);*/
 	
 	var l1 = new Coord(myEdges.left*scaleFactor, myEdges.top*scaleFactor);
     var r1 = new Coord(myEdges.right*scaleFactor, myEdges.bottom*scaleFactor);
@@ -374,29 +377,82 @@ Mover.prototype.checkCollision = function(mover) {
     return true;
 };
 
-//Mover.prototype.resolveCollision = function(A, B) {
-//	// Calculate relative velocity
-//	var rv = B.velocity.sub(A.velocity)
-//
-//	// Calculate relative velocity in terms of the normal direction
-//	float velAlongNormal = DotProduct( rv, normal )
-//
-//	// Do not resolve if velocities are separating
-//	if(velAlongNormal > 0)
-//	return;
-//
-//	// Calculate restitution
-//	float e = min( A.restitution, B.restitution)
-//
-//	// Calculate impulse scalar
-//	float j = -(1 + e) * velAlongNormal
-//	j /= 1 / A.mass + 1 / B.mass
-//
-//	// Apply impulse
-//	Vec2 impulse = j * normal
-//	A.velocity -= 1 / A.mass * impulse
-//	B.velocity += 1 / B.mass * impulse
-//};
+Mover.prototype.checkStandingOn = function(mover) {
+    var myEdges = this.getBoundingBoxEdges();
+	
+    var otherEdges = mover.getBoundingBoxEdges();
+    var scaleFactor = this.getScaleFactor();
+    
+    var l1 = new Coord(myEdges.left*scaleFactor, myEdges.top*scaleFactor);
+    var r1 = new Coord(myEdges.right*scaleFactor, myEdges.bottom*scaleFactor);
+    var l2 = new Coord(otherEdges.left*scaleFactor, otherEdges.top*scaleFactor);
+    var r2 = new Coord(otherEdges.right*scaleFactor, otherEdges.bottom*scaleFactor);
+    
+	var dy = 1;
+	
+    if (abs(r1.y - l2.y) > dy) {
+		return false;
+	}
+    
+    if (l1.compare(r2) === -1 || l2.compare(r1) === -1) {
+        return false;   
+    }
+    
+    return true;
+};
+
+Mover.prototype.resolveCollision = function(A, B, norm) {
+	// Calculate relative velocity
+	var rv = PVector.sub(B.velocity, A.velocity);
+
+	// Calculate relative velocity in terms of the normal direction
+	var velAlongNormal = rv.dot(norm);
+
+	// Do not resolve if velocities are separating
+	if(velAlongNormal > 0)
+		return;
+
+	// Calculate restitution
+	var e = min( A.restitution, B.restitution)
+
+	// Calculate impulse scalar
+	var j = -(1 + e) * velAlongNormal;
+	j /= 1 / A.mass + 1 / B.mass;
+
+	// Apply impulse
+	var impulse = PVector.mult(normal, j);
+	A.velocity.sub(PVector.div(impulse, A.mass));
+	B.velocity.add(PVector.div(impulse, B.mass));
+};
+
+Mover.prototype.update = function() {
+	if (this.isAffectedByGravity) {
+		this.applyForce(GRAVITY);
+	}
+	
+	var nextVelocity = PVector.add(this.velocity, this.acceleration);
+	
+	this.nextPosition.add(PVector.add(this.position, this.velocity));
+	
+	if (this.isAffectedByCollisions) {
+		// TODO handle collision
+		if (this.nextPosition.y >= 400-TILE_SIZE-this.getHeight()/2 + 1) { // on Ground
+			this.onGround = true;
+			if (this.velocity.y > 0) { // moving toward ground
+				this.velocity.y = 0;
+				this.nextPosition.y = this.position.y;
+			}
+		}
+		else {
+			this.onGround = false;
+		}
+	}
+	this.position.set(this.nextPosition);
+	this.velocity.add(this.acceleration);
+	
+	this.acceleration.mult(0);
+	this.nextPosition.set(0, 0);
+};
 
 /***************************************************************************
 					PLATFORM CLASS
@@ -409,6 +465,9 @@ var Platform = function(x, y, width) {
 	this.mass = 1000;
 	
 	this.size = 400;
+	
+	this.isAffectedByGravity = false;
+	this.isAffectedByCollisions = false;
 };
 
 Platform.prototype = Object.create(Mover.prototype);
@@ -448,7 +507,6 @@ MoveRightState.prototype.execute = function(self) {
 	if (self.direction === -1) {self.legAngleReset();self.armAngleReset();}
 	self.direction = 1;
 	self.walk();
-    self.position.x += self.movementSpeed;
 };
 
 var MoveLeftState = function() {};
@@ -459,7 +517,7 @@ MoveLeftState.prototype.execute = function(self) {
     self.position.x -= self.movementSpeed;
 };
 
-var JumpState = function() {this.jumpForce = new PVector(0, -22);};
+var JumpState = function() {this.jumpForce = new PVector(0, -24);};
 JumpState.prototype.execute = function(self) {
 	self.applyForce(this.jumpForce);
 	self.jump();
@@ -482,15 +540,24 @@ FallingState.prototype.execute = function(self) {};
 					PLAYER CLASS
 ***************************************************************************/
 
-var Player = function(x, y) {
+var Player = function(x, y, tm) {
     Mover.apply(this, arguments);
+	
+	this.tm = tm;
+	
     this.position = new PVector(x, y);
 	this.mass = 10;
 	this.height = 390;
 	this.width = 300;
 	this.size = TILE_SIZE;
 	
+	this.isAffectedByGravity = true;
+	this.isAffectedByCollisions = true;
+	this.onGround = true;
+	
 	this.movementSpeed = 5;
+	this.jumpForce = new PVector(0, -24);
+	this.jumped = 0;
 	
 	this.armAngle = 0;
 	
@@ -505,6 +572,7 @@ var Player = function(x, y) {
     
     this.subdivsLeft = 1;
     
+	//{ Character Vertices
     this.hairVertices = [{x:266, y:94}, {x:235, y:88}, {x:208, y:90}, {x:183, y:108}, {x:176, y:136}, {x:171, y:180}, {x:148, y:195}, {x:134, y:207}, {x:115, y:205}, {x:96, y:167}, {x:94, y:131}, {x:81, y:127}, {x:74, y:144}, {x:75, y:165}, {x:83, y:198}, {x:35, y:208}, {x:46, y:198}, {x:41, y:172}, {x:55, y:136}, {x:60, y:112}, {x:80, y:105}, {x:96, y:118}, {x:106, y:93}, {x:132, y:73}, {x:178, y:53}, {x:233, y:55}, {x:254, y:74}, {x:274, y:84}, {x:264, y:89},];
     this.hairVertices_bw = [{x:134, y:94}, {x:165, y:88}, {x:192, y:90}, {x:217, y:108}, {x:224, y:136}, {x:229, y:180}, {x:252, y:195}, {x:266, y:207}, {x:285, y:205}, {x:304, y:167}, {x:306, y:131}, {x:319, y:127}, {x:326, y:144}, {x:325, y:165}, {x:317, y:198}, {x:365, y:208}, {x:354, y:198}, {x:359, y:172}, {x:345, y:136}, {x:340, y:112}, {x:320, y:105}, {x:304, y:118}, {x:294, y:93}, {x:268, y:73}, {x:222, y:53}, {x:167, y:55}, {x:146, y:74}, {x:126, y:84}, {x:136, y:89}];
     
@@ -524,6 +592,7 @@ var Player = function(x, y) {
     this.bootLeftVertices_bw = this.getBootVertices_bw(185, 377);
     this.bootRightVertices = this.getBootVertices(220, 377);
     this.bootRightVertices_bw = this.getBootVertices_bw(220, 377);
+	//}
 };
 
 Player.prototype = Object.create(Mover.prototype);
@@ -666,9 +735,42 @@ Player.prototype.jump = function() {
 	this.armAngle += angleIncrement;
 };
 
+Player.prototype.keyboardCallback = function() {
+	if (KEYS[87] === 1) { // w was pressed - Jump
+		this.applyForce(this.jumpForce);
+		this.jump();
+		this.jumped++;
+		
+		KEYS[87] = 0;
+	}
+	
+	if (KEYS[65] === 1) { // a was pressed - Walk Left
+		if (this.direction === 1 && this.onGround) {this.legAngleReset();this.armAngleReset();}
+		this.direction = -1;
+		if (this.onGround) {
+			this.walk();
+		}
+		this.nextPosition.x -= this.movementSpeed;
+		
+		KEYS[65] = 0;
+	}
+	else if (KEYS[68] === 1) { // d was pressed - Walk Right
+		if (this.direction === -1 && this.onGround) {this.legAngleReset();this.armAngleReset();}
+		this.direction = 1;
+		if (this.onGround) {
+			this.walk();
+		}
+		this.nextPosition.x += this.movementSpeed;
+		
+		KEYS[68] = 0;
+	}
+};
+
 Player.prototype.update = function() {
+	var isLanding = this.onGround;
+	
 	// State Transitions
-	if (KEYS[87] === 1) { // w was pressed
+	/*if (KEYS[87] === 1) { // w was pressed
 		this.changeState(PlayerStates.JUMP);
 		KEYS[87] = 0;
 	}
@@ -695,6 +797,8 @@ Player.prototype.update = function() {
 	    this.changeState(PlayerStates.STANDBY);   
 	}
 	
+	// Look ahead for collisions and react
+	
 	this.STATES[this.currentState].execute(this);
 	
 	if (this.position.y > 400 + this.height/2) {
@@ -705,7 +809,15 @@ Player.prototype.update = function() {
 		this.position.add(this.velocity);
 		this.velocity.add(this.acceleration);
 	}
-	this.acceleration.mult(0);
+	this.acceleration.mult(0);*/
+	this.keyboardCallback();
+	
+	Mover.prototype.update.call(this);
+	
+	if (!isLanding && this.onGround && (this.jumped > 0)) { // Landed this frame
+		this.jumped = 0;
+		this.jumpReset();
+	}
 };
 
 Player.prototype.draw = function() {
@@ -961,56 +1073,6 @@ Tilemap.getCoordinateFromTile = function(tile, position) {
 /* --------------------- END TILEMAP CLASS --------------------- \*/
 
 /* --------------------- END GAME CLASSES --------------------- \*/
-var GameState = {
-    START_MENU : 0,
-    PLAYING : 1,
-    HELP_MENU : 2,
-    OPTIONS_MENU : 3,
-    CONTROLS_MENU : 4,
-	PAUSED : 5,
-};
-
-var StartMenuState = function() {
-    this.a=random(1500);
-    this.mountains = 0; 
-    this.sun = new Sun();
-    this.bigJan = new Player(200, 350);
-    
-	this.playButton = new Button(200, 200, "Play");
-	this.helpButton = new Button(200, 250, "Help");
-	this.optionsButton = new Button(200, 300, "Options");
-};
-var PlayingState = function() {
-	this.hadCollision = false;
-	this.Jan = new Player(100, 200);
-	this.gravity = new PVector(0,0.6);
-};
-var HelpMenuState = function() {
-	this.nextButton = new ArrowButton(350, 350, "Next");
-};
-var OptionsMenuState = function() {
-    this.menuButton = new Button(200, 350, "Menu");
-    
-	this.playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
-	this.playerColorSelector.add('y');
-    this.playerColorSelector.add('r');
-    this.playerColorSelector.add('b');
-    this.playerColorSelector.add('g');
-};
-var ControlsMenuState = function() {
-	this.backButton = new ArrowButton(50, 350, "Back", -1);
-	this.menuButton = new Button(200, 350, "Menu");
-};
-var PausedState = function() {
-    this.continueButton = new Button(200, 200, "Continue");
-    this.helpButton = new Button(200, 250, "Help");
-    this.exitButton = new Button(200, 300, "Exit");
-};
-
-var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState()];
-
-var CurrentGameState = GameState.START_MENU;
-
 var TM_wallsample = ["wwwwwwwwwwwwwwwwwwww",
     "w          ww      w",
     "w wwwwwwww    w  www",
@@ -1045,6 +1107,57 @@ var TM_sample10x10 = ["pppp    pp",
 
 var TM = new Tilemap(TM_sample10x10);
 
+var GameState = {
+    START_MENU : 0,
+    PLAYING : 1,
+    HELP_MENU : 2,
+    OPTIONS_MENU : 3,
+    CONTROLS_MENU : 4,
+	PAUSED : 5,
+};
+
+var StartMenuState = function() {
+    this.a=random(1500);
+    this.mountains = 0; 
+    this.sun = new Sun();
+    this.bigJan = new Player(200, 350);
+    
+	this.playButton = new Button(200, 200, "Play");
+	this.helpButton = new Button(200, 250, "Help");
+	this.optionsButton = new Button(200, 300, "Options");
+};
+var PlayingState = function() {
+	this.hadCollision = false;
+	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
+	this.Jan = new Player(startTile.x, startTile.y, TM);
+	this.gravity = new PVector(0,0.6);
+};
+var HelpMenuState = function() {
+	this.nextButton = new ArrowButton(350, 350, "Next");
+};
+var OptionsMenuState = function() {
+    this.menuButton = new Button(200, 350, "Menu");
+    
+	this.playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
+	this.playerColorSelector.add('y');
+    this.playerColorSelector.add('r');
+    this.playerColorSelector.add('b');
+    this.playerColorSelector.add('g');
+};
+var ControlsMenuState = function() {
+	this.backButton = new ArrowButton(50, 350, "Back", -1);
+	this.menuButton = new Button(200, 350, "Menu");
+};
+var PausedState = function() {
+    this.continueButton = new Button(200, 200, "Continue");
+    this.helpButton = new Button(200, 250, "Help");
+    this.exitButton = new Button(200, 300, "Exit");
+};
+
+var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState()];
+
+//var CurrentGameState = GameState.START_MENU; TODO switch back
+var CurrentGameState = GameState.PLAYING;
 /* --------------------- Menu Views --------------------- \*/
 StartMenuState.prototype.setMountains = function() {
     this.mountains = [[],[],[],[],[],[]]; 
@@ -1138,7 +1251,6 @@ StartMenuState.prototype.MouseCallback = function() {
     }
 };
 
-//var displayHelpMenu = function() {
 HelpMenuState.prototype.display = function() {
     background(255, 0, 0, 10);
     fill(0);
@@ -1182,7 +1294,6 @@ ControlsMenuState.prototype.drawKey = function(x, y, label, width) {
     text(label, x, y);
 };
 
-//var displayControlsMenu = function() {
 ControlsMenuState.prototype.display = function() {
     background(20, 200, 0, 10);
     fill(0);
@@ -1232,7 +1343,6 @@ ControlsMenuState.prototype.MouseCallback = function() {
     }
 };
 
-//var displayOptionsMenu = function() {
 OptionsMenuState.prototype.display = function() {
     background(0, 100, 200, 10);
     fill(0);
@@ -1280,7 +1390,6 @@ OptionsMenuState.prototype.MouseCallback = function() {
     }
 };
 
-//var displayPauseMenu = function() {
 PausedState.prototype.display = function() {
 	background(0);
 	TM.draw();
@@ -1326,13 +1435,12 @@ PausedState.prototype.MouseCallback = function() {
     }  
 };
 
-//var playGame = function() {
 PlayingState.prototype.display = function() {
 	background(0);
     TM.draw();
 	this.Jan.changeColor(SETTINGS_PLAYER_COLOR);
 	
-	var collisionDetected = false;
+	/*var collisionDetected = false;
 	var collidedObject = 0;
 	for (var i = 0; i < TM.platforms.length; i++) {
 		collisionDetected = this.Jan.checkCollision(TM.platforms[i]);
@@ -1343,12 +1451,10 @@ PlayingState.prototype.display = function() {
 	}
 	
 	if(!collisionDetected) {
-		console.log('X');
 	    this.Jan.applyForce(this.gravity);
 	    this.hadCollision = false;
     }
     else {
-		console.log('COLLISSION DETECTED');
 		fill(255, 0, 0);
 		ellipse(collidedObject.position.x, collidedObject.position.y, 30, 30);
         if (!this.hadCollision) {
@@ -1362,7 +1468,7 @@ PlayingState.prototype.display = function() {
 				this.Jan.changeState(PlayerStates.FALLING);
 			}
         }
-    }
+    }*/
 	
 	this.Jan.update();
 	this.Jan.draw();
