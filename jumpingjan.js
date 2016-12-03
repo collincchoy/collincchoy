@@ -331,6 +331,8 @@ var Mover = function(x, y) {
 	this.size = TILE_SIZE;
 	
 	this.movementSpeed = 0;
+	this.maxSpeed = 0;
+
 	
 	this.restitution = 0;
 	
@@ -430,9 +432,12 @@ Mover.prototype.update = function() {
 		this.applyForce(GRAVITY);
 	}
 	
-	var nextVelocity = PVector.add(this.velocity, this.acceleration);
+	var nextVelocity = PVector.add(this.velocity, this.acceleration); // TODO maybe don't need this
+	var nextVelocityYDirection = (nextVelocity.y > 0) ? 1 : -1;
+	// Clamp max speed
+	nextVelocity.y = nextVelocityYDirection * min(this.maxSpeed, abs(nextVelocity.y));
 	
-	this.nextPosition.add(PVector.add(this.position, this.velocity));
+	this.nextPosition.add(PVector.add(this.position, nextVelocity));
 	
 	if (this.isAffectedByCollisions) {
 		// TODO handle collision
@@ -555,9 +560,11 @@ var Player = function(x, y, tm) {
 	this.isAffectedByCollisions = true;
 	this.onGround = true;
 	
-	this.movementSpeed = 5;
-	this.jumpForce = new PVector(0, -24);
+	this.movementSpeed = 3;
+	this.jumpForce = new PVector(0, -35);
 	this.jumped = 0;
+	
+	this.maxSpeed = 20;
 	
 	this.armAngle = 0;
 	
@@ -736,10 +743,12 @@ Player.prototype.jump = function() {
 };
 
 Player.prototype.keyboardCallback = function() {
-	if (KEYS[87] === 1) { // w was pressed - Jump
-		this.applyForce(this.jumpForce);
-		this.jump();
-		this.jumped++;
+	if (KEYS[87] === 2) { // w was pressed - Jump
+		if (this.jumped < 2) {
+			this.applyForce(this.jumpForce);
+			this.jump();
+			this.jumped++;
+		}
 		
 		KEYS[87] = 0;
 	}
@@ -752,7 +761,7 @@ Player.prototype.keyboardCallback = function() {
 		}
 		this.nextPosition.x -= this.movementSpeed;
 		
-		KEYS[65] = 0;
+		//KEYS[65] = 0;
 	}
 	else if (KEYS[68] === 1) { // d was pressed - Walk Right
 		if (this.direction === -1 && this.onGround) {this.legAngleReset();this.armAngleReset();}
@@ -762,7 +771,7 @@ Player.prototype.keyboardCallback = function() {
 		}
 		this.nextPosition.x += this.movementSpeed;
 		
-		KEYS[68] = 0;
+		//KEYS[68] = 0;
 	}
 };
 
@@ -1489,6 +1498,17 @@ var mouseClicked = function() {
 keyPressed = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
 		KEYS[keyCode] = 1;
+	}
+};
+
+keyReleased = function() {
+	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
+		if (keyCode == 87) {
+			KEYS[87] = 2;
+		}
+		else {
+			KEYS[keyCode] = 0;
+		}
 	}
 };
 
