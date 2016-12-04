@@ -505,7 +505,7 @@ Mover.prototype.update = function() {
 	
 	if (this.isAffectedByCollisions) {
 		// TODO handle collision
-		if (this.nextPosition.y >= 400-TILE_SIZE-this.getHeight()/2 + 1) { // on Ground
+		/*if (this.nextPosition.y >= 400-TILE_SIZE-this.getHeight()/2 + 1) { // on Ground
 			this.onGround = true;
 			if (this.nextVelocity.y > 0) { // moving toward ground
 				this.nextVelocity.set(this.nextVelocity.x, 0);
@@ -514,7 +514,7 @@ Mover.prototype.update = function() {
 		}
 		else {
 			this.onGround = false;
-		}
+		}*/
 		
 		this.handleCollision();
 	}
@@ -815,11 +815,11 @@ Player.prototype.resolveLanding = function() {
 
 Player.prototype.keyboardCallback = function() {
 	if (KEYS[87] === 2) { // w was pressed - Jump
-		if (this.jumped < 2) {
+		//if (this.jumped < 2) {
 			this.applyForce(this.jumpForce);
 			this.jump();
 			this.jumped++;
-		}
+		//}
 		
 		KEYS[87] = 0;
 	}
@@ -1104,11 +1104,19 @@ var getAABBvsAABB_ContactInfo = function(a, b, delta) {
 	return {norm:normalPlane, dist: distanceToPlane, point: a.position, impulse: 0};
 };
 
+Tilemap.prototype.getMaxRow = function() {
+	return this.TM.length-1;
+};
+
+Tilemap.prototype.getMaxCol = function() {
+	return this.TM[0].length-1;
+};
+
 Tilemap.prototype.checkInternalCollision = function(tile, normal) {
 	var nextTile = {row:tile.row+normal.x, col:tile.col+normal.y};
 
 	var nextTileType = this.getTileTypeAtTile(nextTile);
-	return (nextTileType === 'p');
+	return (nextTileType === 'p' && this.onGround);
 };
 
 Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
@@ -1117,14 +1125,15 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 	var maxTile = Tilemap.getTileFromCoordinate(maxV);
 	// Possibly add a little wiggle room to maxTile like +0.5
 
-	for (var row = minTile.row; row <= maxTile.row; row++) {
-		for (var col = minTile.col; col <= maxTile.col; col++) {
-            if (this.TM[row][col] === 'p') {
+	for (var r = minTile.row; r <= min(this.getMaxRow(), maxTile.row); r++) {
+		for (var c = minTile.col; c <= min(this.getMaxCol(), maxTile.col); c++) {
+			console.log('row: ' + r + ' col: ' + c);
+            if (this.TM[r][c] === 'p') {
 				var currentPlatform = 0;
 				// Get the tile's AABB
 				for (var i = 0; i < this.platforms.length; i++) {
 					var tilePos = Tilemap.getTileFromCoordinate(this.platforms[i].position);
-					if (tilePos.row === row && tilePos.col === col) {
+					if (tilePos.row === r && tilePos.col === c) {
 						currentPlatform = this.platforms[i];
 						break;
 					}
@@ -1132,7 +1141,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				
 				var delta = getAABBvsAABB_Distance(object, currentPlatform);
 				var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
-				var internalColResult = this.checkInternalCollision({'row':row, 'col':col}, contact.norm);
+				var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm);
 
 				var collisionDetected = !internalColResult;
 				if (collisionDetected) {
@@ -1159,6 +1168,11 @@ Tilemap.prototype.draw = function(){
 };
 
 Tilemap.prototype.getTileTypeAtTile = function(tile) {
+	console.log(tile.col);
+	if (tile.row > this.getMaxRow() || tile.col > this.getMaxCol()) {
+		return 0;
+	}
+	
 	return this.TM[tile.row][tile.col];
 };
 
@@ -1258,8 +1272,8 @@ var simpleMap = ["          ",
 				"          ",
 				"          ",
 				"          ",
-				"          ",
 				"         p",
+				"        pp",
 				"pppppppppp"];
 
 var TM = new Tilemap(simpleMap);
@@ -1285,7 +1299,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	this.hadCollision = false;
-	var startTile = Tilemap.getCoordinateFromTile({row:7, col:2}, 0);
+	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 	this.gravity = new PVector(0,0.6);
 };
