@@ -323,6 +323,7 @@ var Mover = function(x, y, tm) {
 	this.position = new PVector(x, y);
 	this.nextPosition = new PVector(0, 0);
 	this.velocity = new PVector(0, 0);
+	this.nextVelocity = new PVector(0, 0);
 	this.acceleration = new PVector(0, 0);
 	
 	this.tm = tm;
@@ -446,17 +447,47 @@ Mover.prototype.handleCollision = function() {
 	maxPos.y = max(this.position.y, this.nextPosition.y);
 	
 	// Extend AABB to bound entire object - position is from the center
-	minPos.sub(new PVector(this.getWidth/2, this.getHeight/2));
-	maxPos.add(new PVector(this.getWidth/2, this.getHeight/2));
+	minPos.sub(new PVector(this.getWidth()/2, this.getHeight()/2));
+	maxPos.add(new PVector(this.getWidth()/2, this.getHeight()/2));
+	
+	fill(255, 0, 0);
+	ellipse(minPos.x, minPos.y, 20, 20);
+	fill(0, 0, 255);
+	ellipse(maxPos.x, maxPos.y, 20, 20);
 	
 	// Extend AABB a bit more - helps when player is very close to boundary of a cell
 	// Note: not sure if need this or not
-	/*minPos.sub(5, 5);
-	maxPos.add(5, 5);*/
+	//minPos.add(5, 5);
+	//maxPos.sub(5, 5);
 	
-	//this.setPreCollisionVariables();
+	this.setPreCollisionVariables();
 	
 	this.tm.checkForCollisions(minPos, maxPos, this);
+};
+
+Mover.prototype.resolveLanding = function() {};
+
+Mover.prototype.CollisionResolution = function(normal, distanceToPlane) {
+	var separation = max(distanceToPlane, 0);
+	var penetration = min(distanceToPlane, 0);
+	
+	var dt = 60; // TODO. maybe this should be something
+	var normal_velocity = this.nextVelocity.dot(normal) + separation/dt;	
+	
+	this.nextPosition.sub(PVector.mult(normal, penetration/dt));
+	
+	if ( normal_velocity < 0 ) {
+		// remove normal velocity
+		this.nextVelocity.sub(PVector.mult(normal, normal_velocity));
+		
+		if (normal.y < 0) {
+			this.onGround = true;
+			
+			if (!this.wasOnGround) {
+				this.resolveLanding();
+			}
+		}
+	}
 };
 
 Mover.prototype.update = function() {
@@ -464,19 +495,20 @@ Mover.prototype.update = function() {
 		this.applyForce(GRAVITY);
 	}
 	
-	var nextVelocity = PVector.add(this.velocity, this.acceleration); // TODO maybe don't need this
-	var nextVelocityYDirection = (nextVelocity.y > 0) ? 1 : -1;
+	this.nextVelocity = PVector.add(this.velocity, this.acceleration); // TODO maybe don't need this
+	var nextVelocityYDirection = (this.nextVelocity.y > 0) ? 1 : -1;
 	// Clamp max speed
-	nextVelocity.y = nextVelocityYDirection * min(this.maxSpeed, abs(nextVelocity.y));
+	this.nextVelocity.y = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.y));
+	this.nextVelocity.x = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.x));
 	
-	this.nextPosition.add(PVector.add(this.position, nextVelocity));
+	this.nextPosition.add(PVector.add(this.position, this.nextVelocity));
 	
 	if (this.isAffectedByCollisions) {
 		// TODO handle collision
 		if (this.nextPosition.y >= 400-TILE_SIZE-this.getHeight()/2 + 1) { // on Ground
 			this.onGround = true;
-			if (nextVelocity.y > 0) { // moving toward ground
-				nextVelocity.set(this.velocity.x, 0);
+			if (this.nextVelocity.y > 0) { // moving toward ground
+				this.nextVelocity.set(this.nextVelocity.x, 0);
 				this.nextPosition.y = this.position.y;
 			}
 		}
@@ -487,12 +519,12 @@ Mover.prototype.update = function() {
 		this.handleCollision();
 	}
 	this.position.set(this.nextPosition);
-	this.velocity.set(nextVelocity);
+	this.velocity.set(this.nextVelocity);
 	
 	this.acceleration.mult(0);
 	this.nextPosition.set(0, 0);
+	this.nextVelocity.set(0, 0);
 	
-	console.log((this.onGround) ? 'onGround' : 'inAir');
 };
 
 /***************************************************************************
@@ -595,7 +627,7 @@ var Player = function(x, y, tm) {
 	this.onGround = true;
 	
 	this.movementSpeed = 3;
-	this.jumpForce = new PVector(0, -35);
+	this.jumpForce = new PVector(0, -25);
 	this.jumped = 0;
 	
 	this.maxSpeed = 20;
@@ -774,6 +806,11 @@ Player.prototype.jump = function() {
     this.rotateArmsByAngle(angleIncrement);
 	
 	this.armAngle += angleIncrement;
+};
+
+Player.prototype.resolveLanding = function() {
+	this.jumped = 0;
+	this.jumpReset();
 };
 
 Player.prototype.keyboardCallback = function() {
@@ -1055,7 +1092,7 @@ var getAABBvsAABB_ContactInfo = function(a, b, delta) {
 	var normalPlane = (abs(delta.x) > abs(delta.y)) ? new PVector(delta.x, 0) : new PVector(0, delta.y);
 	normalPlane.normalize();
 	normalPlane.mult(-1);
-	
+		
 	var centerPlane = new PVector(normalPlane.x * combinedHalfExtents.x, 
 									normalPlane.y * combinedHalfExtents.y);
 	centerPlane.add(combinedPos);
@@ -1076,6 +1113,7 @@ Tilemap.prototype.checkInternalCollision = function(tile, normal) {
 
 Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
 	var minTile = Tilemap.getTileFromCoordinate(minV);
+	maxV.add(0.5, 0.5);
 	var maxTile = Tilemap.getTileFromCoordinate(maxV);
 	// Possibly add a little wiggle room to maxTile like +0.5
 
@@ -1098,7 +1136,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 
 				var collisionDetected = !internalColResult;
 				if (collisionDetected) {
-					//CollisionResponse
+					object.CollisionResolution(contact.norm, contact.dist);
 					console.log("COLLISSION DETECTED");
 				}
 			}
@@ -1212,8 +1250,19 @@ var TM_sample10x10 = ["pppp    pp",
 				 " p    p   ",
 				 "         p",
 				 "pppppppppp"];	
+				 
+var simpleMap = ["          ",
+				"          ",
+				"          ",
+				"          ",
+				"          ",
+				"          ",
+				"          ",
+				"          ",
+				"         p",
+				"pppppppppp"];
 
-var TM = new Tilemap(TM_sample10x10);
+var TM = new Tilemap(simpleMap);
 
 var GameState = {
     START_MENU : 0,
@@ -1236,7 +1285,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	this.hadCollision = false;
-	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
+	var startTile = Tilemap.getCoordinateFromTile({row:7, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 	this.gravity = new PVector(0,0.6);
 };
@@ -1580,6 +1629,8 @@ PlayingState.prototype.display = function() {
 	
 	this.Jan.update();
 	this.Jan.draw();
+	var temp = this.Jan.getBoundingBoxEdges();
+	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);
 	
 	if (KEYS[80] === 1) {
 		CurrentGameState = GameState.PAUSED;
