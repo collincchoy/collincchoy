@@ -319,11 +319,13 @@ var rotateAroundPoint = function(p1, p2, n) {
 /***************************************************************************
 					MOVER BASE CLASS
 ***************************************************************************/
-var Mover = function(x, y) {
+var Mover = function(x, y, tm) {
 	this.position = new PVector(x, y);
-	this.nextPosition = new PVector();
+	this.nextPosition = new PVector(0, 0);
 	this.velocity = new PVector(0, 0);
 	this.acceleration = new PVector(0, 0);
+	
+	this.tm = tm;
 	
 	this.mass = 1;
 	this.height = 0;
@@ -339,6 +341,7 @@ var Mover = function(x, y) {
 	this.isAffectedByGravity = false;
 	this.isAffectedByCollisions = false;
 	this.onGround = false;
+	this.wasOnGround = false;
 };
 
 Mover.prototype.applyForce = function(force) {
@@ -411,11 +414,12 @@ Mover.prototype.resolveCollision = function(A, B, norm) {
 	var velAlongNormal = rv.dot(norm);
 
 	// Do not resolve if velocities are separating
-	if(velAlongNormal > 0)
+	if(velAlongNormal > 0) {
 		return;
+	}
 
 	// Calculate restitution
-	var e = min( A.restitution, B.restitution)
+	var e = min( A.restitution, B.restitution);
 
 	// Calculate impulse scalar
 	var j = -(1 + e) * velAlongNormal;
@@ -425,6 +429,34 @@ Mover.prototype.resolveCollision = function(A, B, norm) {
 	var impulse = PVector.mult(normal, j);
 	A.velocity.sub(PVector.div(impulse, A.mass));
 	B.velocity.add(PVector.div(impulse, B.mass));
+};
+
+Mover.prototype.setPreCollisionVariables = function() {
+	this.wasOnGround = this.onGround;
+	this.onGround = false;
+};
+
+Mover.prototype.handleCollision = function() {
+	// AABB containing current position and next position
+	var minPos = new PVector();
+	minPos.x = min(this.position.x, this.nextPosition.x);
+	minPos.y = min(this.position.y, this.nextPosition.y);
+	var maxPos = new PVector();
+	maxPos.x = max(this.position.x, this.nextPosition.x);
+	maxPos.y = max(this.position.y, this.nextPosition.y);
+	
+	// Extend AABB to bound entire object - position is from the center
+	minPos.sub(this.getWidth/2, this.getHeight/2);
+	maxPos.add(this.getWidth/2, this.getHeight/2);
+	
+	// Extend AABB a bit more - helps when player is very close to boundary of a cell
+	// Note: not sure if need this or not
+	/*minPos.sub(5, 5);
+	maxPos.add(5, 5);*/
+	
+	this.setPreCollisionVariables();
+	
+	this.tm.checkForCollisions(minPos, maxPos, this);
 };
 
 Mover.prototype.update = function() {
@@ -443,20 +475,24 @@ Mover.prototype.update = function() {
 		// TODO handle collision
 		if (this.nextPosition.y >= 400-TILE_SIZE-this.getHeight()/2 + 1) { // on Ground
 			this.onGround = true;
-			if (this.velocity.y > 0) { // moving toward ground
-				this.velocity.y = 0;
+			if (nextVelocity.y > 0) { // moving toward ground
+				nextVelocity.set(this.velocity.x, 0);
 				this.nextPosition.y = this.position.y;
 			}
 		}
 		else {
 			this.onGround = false;
 		}
+		
+		// this.handleCollision();
 	}
 	this.position.set(this.nextPosition);
-	this.velocity.add(this.acceleration);
+	this.velocity.set(nextVelocity);
 	
 	this.acceleration.mult(0);
 	this.nextPosition.set(0, 0);
+	
+	console.log((this.onGround) ? 'onGround' : 'inAir');
 };
 
 /***************************************************************************
@@ -547,8 +583,6 @@ FallingState.prototype.execute = function(self) {};
 
 var Player = function(x, y, tm) {
     Mover.apply(this, arguments);
-	
-	this.tm = tm;
 	
     this.position = new PVector(x, y);
 	this.mass = 10;
@@ -690,7 +724,7 @@ Player.prototype.moveLegs = function() {
     var angleIncrement = (this.legAngleOffsetCounter<0) ? -1 : 1;
 	
 	this.rotateLegsByNumOfIncrement(angleIncrement);
-    	
+	
 	this.legAngleOffsetCounter = (this.legAngleOffsetCounter-1 < -this.legAngleOffset) ? this.legAngleOffset-1 : this.legAngleOffsetCounter-1;
 };
 
@@ -745,6 +779,7 @@ Player.prototype.jump = function() {
 Player.prototype.keyboardCallback = function() {
 	if (KEYS[87] === 2) { // w was pressed - Jump
 		if (this.jumped < 2) {
+			console.log("I just jumped.");
 			this.applyForce(this.jumpForce);
 			this.jump();
 			this.jumped++;
@@ -1005,6 +1040,39 @@ var Tilemap = function(tm) {
             }
         }
     }
+};
+
+var getAABBvsAABBDistance = function(a, b) {
+	//var combinedExtents = PVector.add()
+};
+
+Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
+	var minTile = Tilemap.getTileFromCoordinate(minV);
+	var maxTile = Tilemap.getTileFromCoordinate(maxV);
+	// Possibly add a little wiggle room to maxTile like +0.5
+			
+	for (var row = minTile.row; row < maxTile.row; row++) {
+		for (var col = maxTile.col; col < maxTile.col; col++) {
+            if (this.TM[row][col] === 'p') {
+				var currentPlatform = 0;
+				// Get the tile's AABB
+				for (var i = 0; i < this.platforms.length; i++) {
+					var tilePos = Tilemap.getTileFromCoordinate(this.platforms[i].position);
+					if (tilePos.row === row && tilePos.col === col) {
+						currentPlatform = this.platforms[i];
+						break;
+					}
+				}
+				
+				var delta = getAABBvsAABBDistance(object, currentPlatform);
+				
+				var collisionDetected = 'todo';
+				if (collisionDetected) {
+					//CollisionResponse
+				}
+			}
+        }
+	}
 };
 
 Tilemap.prototype.drawWall = function(x, y) {
@@ -1503,7 +1571,7 @@ keyPressed = function() {
 
 keyReleased = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
-		if (keyCode == 87) {
+		if (keyCode === 87) {
 			KEYS[87] = 2;
 		}
 		else {
