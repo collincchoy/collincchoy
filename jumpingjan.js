@@ -438,23 +438,23 @@ Mover.prototype.setPreCollisionVariables = function() {
 
 Mover.prototype.handleCollision = function() {
 	// AABB containing current position and next position
-	var minPos = new PVector();
+	var minPos = new PVector(0, 0);
 	minPos.x = min(this.position.x, this.nextPosition.x);
 	minPos.y = min(this.position.y, this.nextPosition.y);
-	var maxPos = new PVector();
+	var maxPos = new PVector(0, 0);
 	maxPos.x = max(this.position.x, this.nextPosition.x);
 	maxPos.y = max(this.position.y, this.nextPosition.y);
 	
 	// Extend AABB to bound entire object - position is from the center
-	minPos.sub(this.getWidth/2, this.getHeight/2);
-	maxPos.add(this.getWidth/2, this.getHeight/2);
+	minPos.sub(new PVector(this.getWidth/2, this.getHeight/2));
+	maxPos.add(new PVector(this.getWidth/2, this.getHeight/2));
 	
 	// Extend AABB a bit more - helps when player is very close to boundary of a cell
 	// Note: not sure if need this or not
 	/*minPos.sub(5, 5);
 	maxPos.add(5, 5);*/
 	
-	this.setPreCollisionVariables();
+	//this.setPreCollisionVariables();
 	
 	this.tm.checkForCollisions(minPos, maxPos, this);
 };
@@ -484,7 +484,7 @@ Mover.prototype.update = function() {
 			this.onGround = false;
 		}
 		
-		// this.handleCollision();
+		this.handleCollision();
 	}
 	this.position.set(this.nextPosition);
 	this.velocity.set(nextVelocity);
@@ -779,7 +779,6 @@ Player.prototype.jump = function() {
 Player.prototype.keyboardCallback = function() {
 	if (KEYS[87] === 2) { // w was pressed - Jump
 		if (this.jumped < 2) {
-			console.log("I just jumped.");
 			this.applyForce(this.jumpForce);
 			this.jump();
 			this.jumped++;
@@ -1042,17 +1041,46 @@ var Tilemap = function(tm) {
     }
 };
 
-var getAABBvsAABBDistance = function(a, b) {
-	//var combinedExtents = PVector.add()
+var getAABBvsAABB_Distance = function(a, b) {
+	return PVector.sub(b.position, a.position);
+};
+
+var getAABBvsAABB_ContactInfo = function(a, b, delta) {
+	var a_halfExtents = new PVector(a.getWidth(), a.getHeight());
+	var b_halfExtents = new PVector(b.getWidth(), b.getHeight());
+	
+	var combinedPos = new PVector(b.position.x, b.position.y);
+	var combinedHalfExtents = PVector.add(a_halfExtents, b_halfExtents);
+	
+	var normalPlane = (abs(delta.x) > abs(delta.y)) ? new PVector(delta.x, 0) : new PVector(0, delta.y);
+	normalPlane.normalize();
+	normalPlane.mult(-1);
+	
+	var centerPlane = new PVector(normalPlane.x * combinedHalfExtents.x, 
+									normalPlane.y * combinedHalfExtents.y);
+	centerPlane.add(combinedPos);
+	
+	// Get distance from point(center of a) to the plane
+	var planeDelta = PVector.sub(a.position, centerPlane);
+	var distanceToPlane = planeDelta.dot(normalPlane);
+	
+	return {norm:normalPlane, dist: distanceToPlane, point: a.position, impulse: 0};
+};
+
+Tilemap.prototype.checkInternalCollision = function(tile, normal) {
+	var nextTile = {row:tile.row+normal.x, col:tile.col+normal.y};
+
+	var nextTileType = this.getTileTypeAtTile(nextTile);
+	return (nextTileType === 'p');
 };
 
 Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
 	var minTile = Tilemap.getTileFromCoordinate(minV);
 	var maxTile = Tilemap.getTileFromCoordinate(maxV);
 	// Possibly add a little wiggle room to maxTile like +0.5
-			
-	for (var row = minTile.row; row < maxTile.row; row++) {
-		for (var col = maxTile.col; col < maxTile.col; col++) {
+
+	for (var row = minTile.row; row <= maxTile.row; row++) {
+		for (var col = minTile.col; col <= maxTile.col; col++) {
             if (this.TM[row][col] === 'p') {
 				var currentPlatform = 0;
 				// Get the tile's AABB
@@ -1064,11 +1092,14 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 					}
 				}
 				
-				var delta = getAABBvsAABBDistance(object, currentPlatform);
-				
-				var collisionDetected = 'todo';
+				var delta = getAABBvsAABB_Distance(object, currentPlatform);
+				var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
+				var internalColResult = this.checkInternalCollision({'row':row, 'col':col}, contact.norm);
+
+				var collisionDetected = !internalColResult;
 				if (collisionDetected) {
 					//CollisionResponse
+					console.log("COLLISSION DETECTED");
 				}
 			}
         }
