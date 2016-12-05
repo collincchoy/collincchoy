@@ -1,8 +1,8 @@
 var sketchProc=function(processingInstance){ with (processingInstance){
-size(400, 400); 
+size(600, 600); 
 frameRate(60);
 
-/* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
+/* /* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
 
 angleMode = 'radians';
 var KEYS = [];
@@ -365,6 +365,10 @@ Mover.prototype.checkCollision = function(mover) {
 	
 	var l1 = new Coord(myEdges.left*scaleFactor, myEdges.top*scaleFactor);
     var r1 = new Coord(myEdges.right*scaleFactor, myEdges.bottom*scaleFactor);
+	l1.x += this.nextPosition.x-this.position.x;
+	r1.x += this.nextPosition.x-this.position.x;
+	l1.y += this.nextPosition.y-this.position.y;
+	r1.y += this.nextPosition.y-this.position.y;
     var l2 = new Coord(otherEdges.left*scaleFactor, otherEdges.top*scaleFactor);
     var r2 = new Coord(otherEdges.right*scaleFactor, otherEdges.bottom*scaleFactor);
     
@@ -383,7 +387,7 @@ Mover.prototype.checkCollision = function(mover) {
     return true;
 };
 
-Mover.prototype.checkStandingOn = function(mover) {
+/*Mover.prototype.checkStandingOn = function(mover) {
     var myEdges = this.getBoundingBoxEdges();
 	
     var otherEdges = mover.getBoundingBoxEdges();
@@ -431,7 +435,7 @@ Mover.prototype.resolveCollision = function(A, B, norm) {
 	A.velocity.sub(PVector.div(impulse, A.mass));
 	B.velocity.add(PVector.div(impulse, B.mass));
 };
-
+*/
 Mover.prototype.setPreCollisionVariables = function() {
 	this.wasOnGround = this.onGround;
 	this.onGround = false;
@@ -476,9 +480,10 @@ Mover.prototype.CollisionResolution = function(normal, distanceToPlane) {
 	
 	this.nextPosition.sub(PVector.mult(normal, penetration/dt));
 	
-	if ( normal_velocity < 0 ) {
+	if ( normal_velocity < -0.1 ) {
 		// remove normal velocity
-		this.nextVelocity.sub(PVector.mult(normal, normal_velocity));
+		var temp = PVector.mult(normal, normal_velocity);
+		this.nextVelocity.sub(temp);
 		
 		if (normal.y < 0) {
 			this.onGround = true;
@@ -499,7 +504,7 @@ Mover.prototype.update = function() {
 	var nextVelocityYDirection = (this.nextVelocity.y > 0) ? 1 : -1;
 	// Clamp max speed
 	this.nextVelocity.y = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.y));
-	this.nextVelocity.x = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.x));
+	//this.nextVelocity.x = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.x));
 	
 	this.nextPosition.add(PVector.add(this.position, this.nextVelocity));
 	
@@ -523,7 +528,7 @@ Mover.prototype.update = function() {
 	
 	this.acceleration.mult(0);
 	this.nextPosition.set(0, 0);
-	this.nextVelocity.set(0, 0);
+	this.nextVelocity.y = 0;
 	
 };
 
@@ -556,6 +561,122 @@ Platform.prototype.draw = function() {
 	stroke(218, 200, 198);
 	fill(218, 200, 198);
 	rect(left, top, this.width, this.height);
+};
+
+var SandBlock = function(x, y, width) {
+	Platform.apply(this, arguments);
+};
+
+SandBlock.prototype = Object.create(Platform.prototype);
+SandBlock.prototype.constructor = Platform;
+
+SandBlock.sandSpots = [];
+
+SandBlock.prototype.draw = function() {
+	fill(212, 175, 74);
+    strokeWeight(1);
+    var SANDLINE = 340;
+    noStroke();
+    rect(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+    
+    for (var i = 0; i < 280; i++) {
+        stroke(89, 69, 13);
+        if (SandBlock.sandSpots.length < 280) {
+            SandBlock.sandSpots.push([random(40), random(40)]);
+        }
+        point(SandBlock.sandSpots[i][0]+this.position.x-this.width/2, SandBlock.sandSpots[i][1]+this.position.y-this.height/2);
+    }
+};
+
+var HalfGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
+
+HalfGroundBlock.prototype = Object.create(Platform.prototype);
+HalfGroundBlock.prototype.constructor = Platform;
+
+HalfGroundBlock.prototype.draw = function() {
+	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    fill(154, 51, 19);
+	noStroke();
+    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+    
+    fill(67, 143, 37);
+    ellipse(corner.x+TILE_SIZE*0.23, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+    ellipse(corner.x+TILE_SIZE*0.5, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+    ellipse(corner.x+TILE_SIZE*0.77, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+};
+
+var MidGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
+MidGroundBlock.prototype = Object.create(Platform.prototype);
+MidGroundBlock.prototype.constructor = Platform;
+
+MidGroundBlock.prototype.draw = function() {
+	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    fill(154, 51, 19);
+	noStroke();
+    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+    
+    fill(78, 22, 11);
+    rect(corner.x, corner.y+TILE_SIZE/2, TILE_SIZE, TILE_SIZE/2);
+    ellipse(corner.x+TILE_SIZE*0.2, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    ellipse(corner.x+TILE_SIZE*0.5, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    ellipse(corner.x+TILE_SIZE*0.8, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    
+    fill(67, 143, 37);
+    noStroke();
+    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+};
+
+var LowerGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
+LowerGroundBlock.prototype = Object.create(Platform.prototype);
+LowerGroundBlock.prototype.constructor = Platform;
+
+LowerGroundBlock.prototype.draw = function() {
+	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    fill(78, 22, 11);
+	noStroke();
+    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+};
+
+/**************************************************************************/
+var Flatform = function(x, y, orientation) {
+	Platform.apply(this, arguments);
+	
+	this.width = TILE_SIZE;
+	this.height = TILE_SIZE/5;
+	
+	this.orientation = orientation;
+};
+
+Flatform.getPositionFromTile = function(tile, orientation) {
+	var x = tile.col*TILE_SIZE+ TILE_SIZE/2;
+	if (orientation === 't') {
+		var y = tile.row*TILE_SIZE + TILE_SIZE/5/2;
+	}
+	else if (orientation === 'b') {
+		var y = (tile.row+1)*TILE_SIZE - TILE_SIZE/5/2;
+	}
+	
+	var temp =  {'x':x, 'y':y};
+	return temp;
+};
+
+Flatform.prototype = Object.create(Platform.prototype);
+Flatform.prototype.constructor = Flatform;
+
+Flatform.prototype.draw = function() {
+	var left = this.position.x - this.width/2;
+	var right = this.position.x + this.width/2;
+	var top = this.position.y - this.height/2;
+	var bottom = this.position.y + this.height/2;
+	
+	var cornerPos = new PVector(left, 
+			(this.orientation === 't') ? top : this.position.y-this.height/2);
+			
+	fill(80, 140, 200);
+	rect(cornerPos.x, cornerPos.y, this.width, this.height);
+	var temp = this.getBoundingBoxEdges();
+	stroke(255, 0, 0);
+	rect(temp.left, temp.top, temp.right-temp.left, temp.bottom-temp.top);
 };
 /***************************************************************************
 					PLAYER STATES
@@ -607,8 +728,6 @@ JumpLeftState.prototype.execute = function(self) {
 	self.position.x -= self.movementSpeed/2;
 };
 
-var FallingState = function() {};
-FallingState.prototype.execute = function(self) {};
 /***************************************************************************
 					PLAYER CLASS
 ***************************************************************************/
@@ -639,7 +758,7 @@ var Player = function(x, y, tm) {
 	this.direction = 1;
 	
 	this.currentState = PlayerStates.STANDBY;
-	this.STATES = [new StandbyState(), new MoveRightState(), new MoveLeftState(), new JumpState(), new JumpRightState(), new JumpLeftState(), new FallingState()];
+	this.STATES = [new StandbyState(), new MoveRightState(), new MoveLeftState(), new JumpState(), new JumpRightState(), new JumpLeftState()];
     
     this.sunglassPoints = [{x:138, y:132}, {x:143, y:121}, {x:157, y:135}, {x:170, y:113}, {x:195, y:113}, {x:197, y:136}, {x:208, y:135}, {x:220, y:114}, {x:238, y:115}, {x:245, y:133}, {x:252, y:120}, {x:258, y:130}, {x:247, y:147}, {x:238, y:167}, {x:212, y:164}, {x:204, y:146}, {x:192, y:147}, {x:185, y:164}, {x:161, y:164}, {x:155, y:146}, ];
     
@@ -809,17 +928,19 @@ Player.prototype.jump = function() {
 };
 
 Player.prototype.resolveLanding = function() {
-	this.jumped = 0;
-	this.jumpReset();
+	if (this.jumped > 0) {
+		this.jumped = 0;
+		this.jumpReset();
+	}
 };
 
 Player.prototype.keyboardCallback = function() {
 	if (KEYS[87] === 2) { // w was pressed - Jump
-		//if (this.jumped < 2) {
+		if (this.jumped < 2) {
 			this.applyForce(this.jumpForce);
 			this.jump();
 			this.jumped++;
-		//}
+		}
 		
 		KEYS[87] = 0;
 	}
@@ -849,47 +970,6 @@ Player.prototype.keyboardCallback = function() {
 Player.prototype.update = function() {
 	var isLanding = this.onGround;
 	
-	// State Transitions
-	/*if (KEYS[87] === 1) { // w was pressed
-		this.changeState(PlayerStates.JUMP);
-		KEYS[87] = 0;
-	}
-	else if (KEYS[65] === 1 && (this.currentState === PlayerStates.FALLING || this.currentState === PlayerStates.JUMP)) {
-		this.changeState(PlayerStates.JUMP_LEFT);
-		KEYS[65] = 0;
-	} 
-	else if (KEYS[65] === 1) {
-		this.changeState(PlayerStates.MOVE_LEFT);
-		KEYS[65] = 0;
-	}
-	else if (KEYS[68] === 1 && (this.currentState === PlayerStates.FALLING || this.currentState === PlayerStates.JUMP)) {
-		this.changeState(PlayerStates.JUMP_RIGHT);
-		KEYS[68] = 0;
-	}
-	else if (KEYS[68] === 1) {
-		this.changeState(PlayerStates.MOVE_RIGHT);
-		KEYS[68] = 0;
-	}
-	else if (this.currentState === PlayerStates.FALLING) {
-		
-	}
-	else {
-	    this.changeState(PlayerStates.STANDBY);   
-	}
-	
-	// Look ahead for collisions and react
-	
-	this.STATES[this.currentState].execute(this);
-	
-	if (this.position.y > 400 + this.height/2) {
-	    this.position.y = 200;
-		this.velocity.set(0, 0);
-	}
-	else {
-		this.position.add(this.velocity);
-		this.velocity.add(this.acceleration);
-	}
-	this.acceleration.mult(0);*/
 	this.keyboardCallback();
 	
 	Mover.prototype.update.call(this);
@@ -1056,8 +1136,16 @@ var Tilemap = function(tm) {
             switch(this.TM[row][col]) {
                 case 'p':
 					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
-                    this.platforms.push(new Platform(newCoord.x, newCoord.y, this.size));
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size));
                     break;
+				case 'f':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 'b');
+					this.platforms.push(new Flatform(newCoord.x, newCoord.y, 'b'));
+					break;
+				case 't':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
+					this.platforms.push(new Flatform(newCoord.x, newCoord.y, 't'));
+					break;
                 default:
                     // Do nothing
             }
@@ -1087,6 +1175,7 @@ var getAABBvsAABB_ContactInfo = function(a, b, delta) {
 	var b_halfExtents = new PVector(b.getWidth(), b.getHeight());
 	
 	var combinedPos = new PVector(b.position.x, b.position.y);
+
 	var combinedHalfExtents = PVector.add(a_halfExtents, b_halfExtents);
 	
 	var normalPlane = (abs(delta.x) > abs(delta.y)) ? new PVector(delta.x, 0) : new PVector(0, delta.y);
@@ -1104,6 +1193,14 @@ var getAABBvsAABB_ContactInfo = function(a, b, delta) {
 	return {norm:normalPlane, dist: distanceToPlane, point: a.position, impulse: 0};
 };
 
+Tilemap.prototype.getMinRow = function() {
+	return 0;
+};
+
+Tilemap.prototype.getMinCol = function() {
+	return 0;
+};
+
 Tilemap.prototype.getMaxRow = function() {
 	return this.TM.length-1;
 };
@@ -1112,11 +1209,15 @@ Tilemap.prototype.getMaxCol = function() {
 	return this.TM[0].length-1;
 };
 
+Tilemap.prototype.isTileValid = function(tile) {
+	return (tile.row <= this.getMinRow() || tile.col <= this.getMinCol() || tile.row > this.getMaxRow() || tile.col > this.getMaxCol());
+};
+
 Tilemap.prototype.checkInternalCollision = function(tile, normal) {
 	var nextTile = {row:tile.row+normal.x, col:tile.col+normal.y};
 
 	var nextTileType = this.getTileTypeAtTile(nextTile);
-	return (nextTileType === 'p' && this.onGround);
+	return (nextTileType !== ' ' && this.onGround);
 };
 
 Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
@@ -1125,10 +1226,9 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 	var maxTile = Tilemap.getTileFromCoordinate(maxV);
 	// Possibly add a little wiggle room to maxTile like +0.5
 
-	for (var r = minTile.row; r <= min(this.getMaxRow(), maxTile.row); r++) {
-		for (var c = minTile.col; c <= min(this.getMaxCol(), maxTile.col); c++) {
-			console.log('row: ' + r + ' col: ' + c);
-            if (this.TM[r][c] === 'p') {
+	for (var r = max(this.getMinRow(), minTile.row); r <= min(this.getMaxRow(), maxTile.row); r++) {
+		for (var c = max(this.getMinCol(), minTile.col); c <= min(this.getMaxCol(), maxTile.col); c++) {
+            if (this.TM[r][c] !== ' ') {
 				var currentPlatform = 0;
 				// Get the tile's AABB
 				for (var i = 0; i < this.platforms.length; i++) {
@@ -1143,10 +1243,10 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
 				var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm);
 
-				var collisionDetected = !internalColResult;
-				if (collisionDetected) {
+				var collisionDetected = object.checkCollision(currentPlatform);
+				if (collisionDetected && !internalColResult) {
 					object.CollisionResolution(contact.norm, contact.dist);
-					console.log("COLLISSION DETECTED");
+					//console.log("COLLISSION DETECTED");
 				}
 			}
         }
@@ -1168,7 +1268,6 @@ Tilemap.prototype.draw = function(){
 };
 
 Tilemap.prototype.getTileTypeAtTile = function(tile) {
-	console.log(tile.col);
 	if (tile.row > this.getMaxRow() || tile.col > this.getMaxCol()) {
 		return 0;
 	}
@@ -1178,7 +1277,7 @@ Tilemap.prototype.getTileTypeAtTile = function(tile) {
 
 Tilemap.prototype.tileIsFree = function(tile) {
 	// Check tile is in bounds
-	if (tile.row <= 0 || tile.col <= 0 || tile.row >= NUM_TILES || tile.col >= NUM_TILES) {
+	if (this.isTileValid(tile)) {
 		return false;
 	}
 	
@@ -1266,14 +1365,14 @@ var TM_sample10x10 = ["pppp    pp",
 				 "pppppppppp"];	
 				 
 var simpleMap = ["          ",
-				"          ",
-				"          ",
-				"          ",
-				"          ",
-				"          ",
-				"          ",
+				" p        ",
+				"     p    ",
 				"         p",
-				"        pp",
+				"    f   p ",
+				"          ",
+				"  f       ",
+				" p       p",
+				"        pt",
 				"pppppppppp"];
 
 var TM = new Tilemap(simpleMap);
@@ -1611,39 +1710,10 @@ PlayingState.prototype.display = function() {
     TM.draw();
 	this.Jan.changeColor(SETTINGS_PLAYER_COLOR);
 	
-	/*var collisionDetected = false;
-	var collidedObject = 0;
-	for (var i = 0; i < TM.platforms.length; i++) {
-		collisionDetected = this.Jan.checkCollision(TM.platforms[i]);
-		if (collisionDetected) {
-			collidedObject = TM.platforms[i];
-		    break;
-		}
-	}
-	
-	if(!collisionDetected) {
-	    this.Jan.applyForce(this.gravity);
-	    this.hadCollision = false;
-    }
-    else {
-		fill(255, 0, 0);
-		ellipse(collidedObject.position.x, collidedObject.position.y, 30, 30);
-        if (!this.hadCollision) {
-            this.Jan.velocity.set(0,0); 
-            this.hadCollision = true;
-			if (this.Jan.currentState === PlayerStates.FALLING) {
-				this.Jan.jumpReset();
-				this.Jan.changeState(PlayerStates.STANDBY);
-			}
-			else if (this.Jan.currentState === PlayerStates.MOVE_RIGHT || this.Jan.currentState === PlayerStates.MOVE_LEFT) {
-				this.Jan.changeState(PlayerStates.FALLING);
-			}
-        }
-    }*/
-	
 	this.Jan.update();
 	this.Jan.draw();
 	var temp = this.Jan.getBoundingBoxEdges();
+	noFill();
 	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);
 	
 	if (KEYS[80] === 1) {
@@ -1685,4 +1755,4 @@ var draw = function() {
 
 /* --------------------- END PROGRAM CODE --------------------- \*/
 
-}};
+}}; 
