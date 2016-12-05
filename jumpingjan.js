@@ -454,10 +454,11 @@ Mover.prototype.handleCollision = function() {
 	minPos.sub(new PVector(this.getWidth()/2, this.getHeight()/2));
 	maxPos.add(new PVector(this.getWidth()/2, this.getHeight()/2));
 	
-	fill(255, 0, 0);
+	// Debug Collisions
+	/*fill(255, 0, 0);
 	ellipse(minPos.x, minPos.y, 20, 20);
 	fill(0, 0, 255);
-	ellipse(maxPos.x, maxPos.y, 20, 20);
+	ellipse(maxPos.x, maxPos.y, 20, 20);*/
 	
 	// Extend AABB a bit more - helps when player is very close to boundary of a cell
 	// Note: not sure if need this or not
@@ -1271,11 +1272,11 @@ Tilemap.prototype.isTileValid = function(tile) {
 	return (tile.row <= this.getMinRow() || tile.col <= this.getMinCol() || tile.row > this.getMaxRow() || tile.col > this.getMaxCol());
 };
 
-Tilemap.prototype.checkInternalCollision = function(tile, normal) {
+Tilemap.prototype.checkInternalCollision = function(tile, normal, object) {
 	var nextTile = {row:tile.row+normal.x, col:tile.col+normal.y};
 
 	var nextTileType = this.getTileTypeAtTile(nextTile);
-	return (nextTileType !== ' ' && this.onGround);
+	return (nextTileType !== ' ' && object.wasOnGround);
 };
 
 Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {		
@@ -1303,7 +1304,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				
 				var delta = getAABBvsAABB_Distance(object, currentPlatform);
 				var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
-				var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm);
+				var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm, object);
 
 				var collisionDetected = object.checkCollision(currentPlatform);
 				if (collisionDetected && !internalColResult) {
@@ -1509,8 +1510,8 @@ var PausedState = function() {
 
 var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState()];
 
-//var CurrentGameState = GameState.START_MENU; TODO switch back
-var CurrentGameState = GameState.PLAYING;
+var CurrentGameState = GameState.START_MENU; 
+//var CurrentGameState = GameState.PLAYING;
 /* --------------------- Menu Views --------------------- \*/
 StartMenuState.prototype.setMountains = function() {
     this.mountains = [[],[],[],[],[],[]]; 
@@ -1522,6 +1523,11 @@ StartMenuState.prototype.setMountains = function() {
         }
     }  
 };
+
+var groundBlocks = [];
+for (var i = 0; i < 400; i+=40) {
+	groundBlocks.push(new MidGroundBlock(i, 420, true));
+}
 
 StartMenuState.prototype.drawBackground = function() {
     noStroke();
@@ -1552,6 +1558,10 @@ StartMenuState.prototype.drawBackground = function() {
     }
     
     this.sun.draw();
+	
+	for (var i = 0; i < groundBlocks.length; i++) {
+		groundBlocks[i].draw();
+	}
 };
 
 StartMenuState.prototype.display = function() {
@@ -1848,9 +1858,9 @@ PlayingState.prototype.display = function() {
 	this.Jan.update();
 	this.Jan.draw();
 	
-	var temp = this.Jan.getBoundingBoxEdges();
+	/*var temp = this.Jan.getBoundingBoxEdges();
 	noFill();
-	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);
+	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);*/
 
 	if (KEYS[80] === 1) {
 		CurrentGameState = GameState.PAUSED;
