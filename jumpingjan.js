@@ -1,5 +1,5 @@
 var sketchProc=function(processingInstance){ with (processingInstance){
-size(600, 600); 
+size(400, 600); 
 frameRate(60);
 
 /* /* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
@@ -563,29 +563,60 @@ Platform.prototype.draw = function() {
 	rect(left, top, this.width, this.height);
 };
 
-var SandBlock = function(x, y, width) {
+var SandBlock = function(x, y, width, grassFlag) {
 	Platform.apply(this, arguments);
+	
+	this.hasGrass = grassFlag;
 };
 
 SandBlock.prototype = Object.create(Platform.prototype);
 SandBlock.prototype.constructor = Platform;
 
 SandBlock.sandSpots = [];
+SandBlock.img = 0;
+SandBlock.img_g = 0;
 
 SandBlock.prototype.draw = function() {
-	fill(212, 175, 74);
-    strokeWeight(1);
-    var SANDLINE = 340;
-    noStroke();
-    rect(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
-    
-    for (var i = 0; i < 280; i++) {
-        stroke(89, 69, 13);
-        if (SandBlock.sandSpots.length < 280) {
-            SandBlock.sandSpots.push([random(40), random(40)]);
-        }
-        point(SandBlock.sandSpots[i][0]+this.position.x-this.width/2, SandBlock.sandSpots[i][1]+this.position.y-this.height/2);
-    }
+	if (SandBlock.img !== 0) {
+		if (this.hasGrass) {
+			image(SandBlock.img_g, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+		}
+		else {
+			image(SandBlock.img, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+		}
+	}
+	else {
+		fill(212, 175, 74);
+		strokeWeight(1);
+		noStroke();
+		rect(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+		
+		for (var i = 0; i < 280; i++) {
+			stroke(89, 69, 13);
+			if (SandBlock.sandSpots.length < 280) {
+				SandBlock.sandSpots.push([random(40), random(40)]);
+			}
+			point(SandBlock.sandSpots[i][0]+this.position.x-this.width/2, SandBlock.sandSpots[i][1]+this.position.y-this.height/2);
+		}
+		
+		if (this.hasGrass) {
+			fill(67, 143, 37);
+			noStroke();
+			var x = this.position.x-this.width/2;
+			var y = this.position.y-this.height/2;
+			
+			ellipse(x+TILE_SIZE*0.23, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			ellipse(x+TILE_SIZE*0.5, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			ellipse(x+TILE_SIZE*0.77, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			
+			SandBlock.img_g = get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+		}
+		else {
+			SandBlock.img = get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+
+		}
+		
+	}
 };
 
 var HalfGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
@@ -605,7 +636,7 @@ HalfGroundBlock.prototype.draw = function() {
     ellipse(corner.x+TILE_SIZE*0.77, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
 };
 
-var MidGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
+var MidGroundBlock = function(x, y, width, hasGrass) {Platform.apply(this, arguments);this.hasGrass=hasGrass};
 MidGroundBlock.prototype = Object.create(Platform.prototype);
 MidGroundBlock.prototype.constructor = Platform;
 
@@ -621,9 +652,11 @@ MidGroundBlock.prototype.draw = function() {
     ellipse(corner.x+TILE_SIZE*0.5, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
     ellipse(corner.x+TILE_SIZE*0.8, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
     
-    fill(67, 143, 37);
-    noStroke();
-    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+	if (this.hasGrass) {
+		fill(67, 143, 37);
+		noStroke();
+		rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+	}
 };
 
 var LowerGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
@@ -675,8 +708,6 @@ Flatform.prototype.draw = function() {
 	fill(80, 140, 200);
 	rect(cornerPos.x, cornerPos.y, this.width, this.height);
 	var temp = this.getBoundingBoxEdges();
-	stroke(255, 0, 0);
-	rect(temp.left, temp.top, temp.right-temp.left, temp.bottom-temp.top);
 };
 /***************************************************************************
 					PLAYER STATES
@@ -1136,7 +1167,31 @@ var Tilemap = function(tm) {
             switch(this.TM[row][col]) {
                 case 'p':
 					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
-                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size));
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, true));
+                    break;
+				case 'h':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new HalfGroundBlock(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 's':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, false));
+                    break;
+				case 'd':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, true));
+                    break;
+				case 'm':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new MidGroundBlock(newCoord.x, newCoord.y, this.size, true));
+                    break;
+				case 'n':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new MidGroundBlock(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 'l':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new LowerGroundBlock(newCoord.x, newCoord.y, this.size));
                     break;
 				case 'f':
 					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 'b');
@@ -1145,6 +1200,9 @@ var Tilemap = function(tm) {
 				case 't':
 					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
 					this.platforms.push(new Flatform(newCoord.x, newCoord.y, 't'));
+					break;
+				case '+':
+					this.ladderTile = {row:row, col:col};
 					break;
                 default:
                     // Do nothing
@@ -1228,7 +1286,11 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 
 	for (var r = max(this.getMinRow(), minTile.row); r <= min(this.getMaxRow(), maxTile.row); r++) {
 		for (var c = max(this.getMinCol(), minTile.col); c <= min(this.getMaxCol(), maxTile.col); c++) {
-            if (this.TM[r][c] !== ' ') {
+			if (this.TM[r][c] === '+') {
+				object.atLadder = true;
+				return;
+			}
+            else if (this.TM[r][c] !== ' ') {
 				var currentPlatform = 0;
 				// Get the tile's AABB
 				for (var i = 0; i < this.platforms.length; i++) {
@@ -1253,6 +1315,18 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 	}
 };
 
+Tilemap.prototype.drawLadder = function(tile) {
+    var corner = Tilemap.getCoordinateFromTile(tile, 1);
+    
+    fill(147, 58, 0);
+	rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+    rect(corner.x, corner.y+TILE_SIZE*0.3, TILE_SIZE, TILE_SIZE*0.2);
+    rect(corner.x, corner.y+TILE_SIZE*0.7, TILE_SIZE, TILE_SIZE*0.2);
+    
+    rect(corner.x, corner.y, TILE_SIZE/5, TILE_SIZE);
+    rect(corner.x+TILE_SIZE*0.8, corner.y, TILE_SIZE/5, TILE_SIZE);
+};
+
 Tilemap.prototype.drawWall = function(x, y) {
     image(getImage("cute/WallBlockTall"), x, y, this.size, this.size);
 };
@@ -1264,6 +1338,10 @@ Tilemap.prototype.draw = function(){
 	
 	for (var i = 0; i < this.platforms.length; i++) {
 		this.platforms[i].draw();
+	}
+
+	if(this.ladderTile) {
+		this.drawLadder(this.ladderTile);
 	}
 };
 
@@ -1364,16 +1442,21 @@ var TM_sample10x10 = ["pppp    pp",
 				 "         p",
 				 "pppppppppp"];	
 				 
-var simpleMap = ["          ",
+var simpleMap =[" +        ",
 				" p        ",
 				"     p    ",
 				"         p",
 				"    f   p ",
 				"          ",
 				"  f       ",
-				" p       p",
-				"        pt",
-				"pppppppppp"];
+				" h       m",
+				"        dl",
+				"          ",
+				"          ",
+				"    t     ",
+				"         h",
+				"mmmmmmmmmn",
+				"llllllllll"];
 
 var TM = new Tilemap(simpleMap);
 
@@ -1704,21 +1787,77 @@ PausedState.prototype.MouseCallback = function() {
         CurrentGameState = GameState.START_MENU;
     }  
 };
+b = loadImage("bgTile.jpg");
 
+var getBgTilePos = [];
+var getBgTile = function(x, y, w, h) {
+	var size = w;
+    var corner = {x:x-w/2, y:y-h/2};
+    
+    fill(28, 40, 107);
+    rect(corner.x, corner.y, w, h);
+    
+    var drawBall = function(m_x, m_y, m_size) {
+        fill(66, 98, 184);
+        ellipse(m_x, m_y, m_size, m_size);
+        noStroke();
+        fill(153, 162, 184, 100);
+        ellipse(m_x-m_size*0.05, m_y-m_size*0.03, m_size*0.6, m_size*0.6);
+    };
+	/*var numCircles = 0;
+	if (getBgTilePos.length === 0 || frameCount % 12 === 0) {
+		numCircles = random(30);
+		getBgTilePos = [];
+		for (var i = 0; i < numCircles; i++) {
+			var randPos = {x:x+w*random()-w/2, y:y+h*random()-h/2};
+			var randTile = Tilemap.getTileFromCoordinate(randPos);
+			randPos = Tilemap.getCoordinateFromTile(randTile);
+			getBgTilePos.push([randPos.x, randPos.y, w*random()*0.4]);
+		}
+	}
+	
+	for (var i = 0; i < getBgTilePos.length; i++) {
+		drawBall(getBgTilePos[i][0], getBgTilePos[i][1], getBgTilePos[i][2]);
+	}*/
+	
+	drawBall(x+size*0.2, y+size*0.1, size*0.48);
+	drawBall(x-size*0.19, y-size*0.15, size*0.4);
+	drawBall(x-size*0.19, y+size*0.25, size*0.2);
+};
+
+var drawBgTile = function(x, y, w, h) {
+    //var corner = getCoordinateFromTile(tile, 1);
+    //var center = getCoordinateFromTile(tile, 0);
+	var corner = {x:x, y:y};
+	var center = {x:x+w/2, y:y+h/2};
+    
+    getBgTile(center.x, center.y, w, h);
+    
+    fill(0, 0, 0, 30);
+    rect(corner.x, corner.y, w, h);
+};
 PlayingState.prototype.display = function() {
 	background(0);
+	//image(b, 0, 0, 400, 400);
+	drawBgTile(0, 0, 400, 600);
+	
     TM.draw();
+	
 	this.Jan.changeColor(SETTINGS_PLAYER_COLOR);
 	
 	this.Jan.update();
 	this.Jan.draw();
+	
 	var temp = this.Jan.getBoundingBoxEdges();
 	noFill();
 	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);
-	
+
 	if (KEYS[80] === 1) {
 		CurrentGameState = GameState.PAUSED;
 		KEYS[80] = 0;
+	}
+	if (this.Jan.atLadder) {
+		CurrentGameState = GameState.PAUSED;
 	}
 };
 
