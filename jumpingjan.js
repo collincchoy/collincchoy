@@ -1006,10 +1006,10 @@ Player.prototype.update = function() {
 	
 	Mover.prototype.update.call(this);
 	
-	if (!isLanding && this.onGround && (this.jumped > 0)) { // Landed this frame
+	/*if (!isLanding && this.onGround && (this.jumped > 0)) { // Landed this frame
 		this.jumped = 0;
 		this.jumpReset();
-	}
+	}*/
 };
 
 Player.prototype.draw = function() {
@@ -1432,19 +1432,24 @@ var TM_wallsample = ["wwwwwwwwwwwwwwwwwwww",
     "w     ww    ww  wwww",
     "wwwwwwwwwwwwwwwwwwww"];
 
-var TM_sample10x10 = ["pppp    pp",
-				 "       pp ",
-				 "pppp    p ",
-				 "       ppp",
-				 "      p   ",
-				 "          ",
-				 "p  p p    ",
-				 " p    p   ",
-				 "         p",
-				 "pppppppppp"];	
-				 
 var simpleMap =[" +        ",
 				" p        ",
+				"     p    ",
+				"         p",
+				"    f   p ",
+				"          ",
+				"  f       ",
+				" h       m",
+				"        dl",
+				"          ",
+				"          ",
+				"    t     ",
+				"         h",
+				"mmmmmmmmmn",
+				"llllllllll"];
+				
+var simpleMap2=["         +",
+				" p       t",
 				"     p    ",
 				"         p",
 				"    f   p ",
@@ -1481,10 +1486,9 @@ var StartMenuState = function() {
 	this.optionsButton = new Button(200, 300, "Options");
 };
 var PlayingState = function() {
-	this.hadCollision = false;
 	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
-	this.gravity = new PVector(0,0.6);
+	this.currentLevel = 1;
 };
 var HelpMenuState = function() {
 	this.nextButton = new ArrowButton(350, 350, "Next");
@@ -1794,10 +1798,10 @@ PausedState.prototype.MouseCallback = function() {
     }
     else if (this.exitButton.mouseIsOnMe()) {
         // TODO: Reset all Game variables
+		GameStates[GameState.PLAYING].resetGame();
         CurrentGameState = GameState.START_MENU;
     }  
 };
-b = loadImage("bgTile.jpg");
 
 var getBgTilePos = [];
 var getBgTile = function(x, y, w, h) {
@@ -1846,6 +1850,31 @@ var drawBgTile = function(x, y, w, h) {
     fill(0, 0, 0, 30);
     rect(corner.x, corner.y, w, h);
 };
+
+PlayingState.prototype.processNextLevel = function() {
+	TM = new Tilemap(simpleMap2);
+	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
+	this.Jan = new Player(startTile.x, startTile.y, TM);
+	this.currentLevel += 1;
+};
+
+PlayingState.prototype.resetGame = function() {
+	TM = new Tilemap(simpleMap);
+	var startTile = Tilemap.getCoordinateFromTile({row:8, col:2}, 0);
+	this.Jan = new Player(startTile.x, startTile.y, TM);
+	this.currentLevel = 1;
+};
+
+PlayingState.prototype.showCurrentLevel = function() {
+	fill(240, 240, 240);
+	text("Level: " + this.currentLevel, 370, 580);
+};
+
+PlayingState.prototype.processWin = function() {
+	this.resetGame();
+	// TODO
+};
+
 PlayingState.prototype.display = function() {
 	background(0);
 	//image(b, 0, 0, 400, 400);
@@ -1861,13 +1890,19 @@ PlayingState.prototype.display = function() {
 	/*var temp = this.Jan.getBoundingBoxEdges();
 	noFill();
 	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);*/
+	
+	this.showCurrentLevel();
 
 	if (KEYS[80] === 1) {
 		CurrentGameState = GameState.PAUSED;
 		KEYS[80] = 0;
 	}
-	if (this.Jan.atLadder) {
-		CurrentGameState = GameState.PAUSED;
+	if (this.Jan.atLadder && this.currentLevel < 5) {
+		this.processNextLevel();
+		//CurrentGameState = GameState.PAUSED;
+	}
+	else if (this.currentLevel >= 5) {
+		this.processWin();
 	}
 };
 
