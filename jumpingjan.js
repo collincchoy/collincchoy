@@ -717,7 +717,7 @@ Flatform.prototype.draw = function() {
 
 var Player = function(x, y, tm) {
     Mover.apply(this, arguments);
-	
+	this.startPosition = new PVector(x, y);
     this.position = new PVector(x, y);
 	this.mass = 10;
 	this.height = 390;
@@ -769,6 +769,12 @@ var Player = function(x, y, tm) {
 
 Player.prototype = Object.create(Mover.prototype);
 Player.prototype.constructor = Player;
+
+Player.prototype.resetPlayer = function() {
+	this.position.x = this.startPosition.x;
+	this.position.y = this.startPosition.y;
+	
+};
 
 Player.prototype.changeColor = function(col) {
 	this.playerColor = (col === 0) ? color(236, 165, 15) :
@@ -954,6 +960,10 @@ Player.prototype.update = function() {
 		this.jumped = 0;
 		this.jumpReset();
 	}*/
+	
+	if (this.position.x >= 400 + this.getWidth()/2 || this.position.x <= 0 - this.getWidth()/2) {
+		this.resetPlayer();
+	}
 };
 
 Player.prototype.draw = function() {
@@ -1219,7 +1229,9 @@ Tilemap.prototype.isTileValid = function(tile) {
 
 Tilemap.prototype.checkInternalCollision = function(tile, normal, object) {
 	var nextTile = {row:tile.row+normal.x, col:tile.col+normal.y};
-
+	if (!this.isTileValid(nextTile)) {
+		return false;
+	}
 	var nextTileType = this.getTileTypeAtTile(nextTile);
 	return (nextTileType !== ' ' && object.wasOnGround);
 };
@@ -1254,7 +1266,6 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				var collisionDetected = object.checkCollision(currentPlatform);
 				if (collisionDetected && !internalColResult) {
 					object.CollisionResolution(contact.norm, contact.dist);
-					//console.log("COLLISSION DETECTED");
 				}
 			}
         }
@@ -1295,7 +1306,6 @@ Tilemap.prototype.getTileTypeAtTile = function(tile) {
 	if (tile.row > this.getMaxRow() || tile.col > this.getMaxCol()) {
 		return 0;
 	}
-	
 	return this.TM[tile.row][tile.col];
 };
 
@@ -1401,11 +1411,59 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				"l    ns  n",
 				"l       sn",
 				"nmmmmmmmmm",
+				"llllllllll"],
+				
+			   ["+ llllllll",
+				"m        l",
+				"ln        ",
+				"          ",
+				"   t    t ",
+				"          ",
+				"f         ",
+				"         m",
+				"        dl",
+				"          ",
+				"m         ",
+				"ll  f     ",
+				"ll       h",
+				"lmmmmmmmmn",
 				"llllllllll"]
 			];
 	}
 	else if (currentLevel <= 10) {
-		//TODO
+		tms = [
+				["+         ",
+				"dd        ",
+				"ss   s    ",
+				"ss       p",
+				"ss  t   p ",
+				"          ",
+				"  d       ",
+				"          ",
+				"        dl",
+				"d         ",
+				"          ",
+				"       ddd",
+				"      dsss",
+				"ddddddssss",
+				"ssssssssss"],
+				
+				["+         ",
+				"dd        ",
+				"ss   s    ",
+				"ss       p",
+				"ss  t   p ",
+				"          ",
+				"  d       ",
+				"         s",
+				"         s",
+				"d        s",
+				"        ds",
+				"       dss",
+				"      dsss",
+				"ddddddssss",
+				"ssssssssss"]
+			];
 	}
 	else if (currentLevel <= 15) {
 		// TODO
@@ -1417,7 +1475,8 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 	while(tmNum === currentTMIndex) {
 		tmNum = floor(random(tms.length));
 	}
-	console.log(tmNum);
+	console.log('ct:' + currentTMIndex);
+	console.log("tn: " + tmNum);
 	return new Tilemap(tms[tmNum], tmNum);
 };
 
@@ -1487,7 +1546,7 @@ var StartMenuState = function() {
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
-	this.currentLevel = 1;
+	this.currentLevel = 5;
 };
 var HelpMenuState = function() {
 	this.nextButton = new ArrowButton(350, 350, "Next");
@@ -1803,18 +1862,35 @@ PausedState.prototype.MouseCallback = function() {
 };
 
 var getBgTilePos = [];
-var getBgTile = function(x, y, w, h) {
+PlayingState.prototype.getBgTile = function(x, y, w, h) {
 	var size = w;
     var corner = {x:x-w/2, y:y-h/2};
+	var c1 = 0, c2 = 0, c3 = 0;
+	if (this.currentLevel <= 5) {
+		c1 = color(28, 40, 107);
+		c2 = color(66, 98, 184);
+		c3 = color(153, 162, 184, 100);
+	}
+	else if (this.currentLevel <= 10 ) {
+		c1 = color(242, 160, 8);
+		c2 = color(224, 118, 38);
+		c3 = color(227, 161, 113, 100);
+	}
+	else if (this.currentLevel <= 15 ) {
+		
+	}
+	else if (this.currentLevel <= 20) {
+		
+	}
     
-    fill(28, 40, 107);
+    fill(c1);
     rect(corner.x, corner.y, w, h);
     
     var drawBall = function(m_x, m_y, m_size) {
-        fill(66, 98, 184);
+        fill(c2);
         ellipse(m_x, m_y, m_size, m_size);
         noStroke();
-        fill(153, 162, 184, 100);
+        fill(c3);
         ellipse(m_x-m_size*0.05, m_y-m_size*0.03, m_size*0.6, m_size*0.6);
     };
 	/*var numCircles = 0;
@@ -1838,13 +1914,11 @@ var getBgTile = function(x, y, w, h) {
 	drawBall(x-size*0.19, y+size*0.25, size*0.2);
 };
 
-var drawBgTile = function(x, y, w, h) {
-    //var corner = getCoordinateFromTile(tile, 1);
-    //var center = getCoordinateFromTile(tile, 0);
+PlayingState.prototype.drawBgTile = function(x, y, w, h) {
 	var corner = {x:x, y:y};
 	var center = {x:x+w/2, y:y+h/2};
     
-    getBgTile(center.x, center.y, w, h);
+    this.getBgTile(center.x, center.y, w, h);
     
     fill(0, 0, 0, 30);
     rect(corner.x, corner.y, w, h);
@@ -1852,14 +1926,14 @@ var drawBgTile = function(x, y, w, h) {
 
 PlayingState.prototype.processNextLevel = function() {
 	this.currentLevel += 1;
-	TM = Tilemap.getNewTilemap(this.currentLevel, TM.currentTMIndex);
+	TM = Tilemap.getNewTilemap(this.currentLevel, TM.tmIndex);
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
 
 PlayingState.prototype.resetGame = function() {
 	this.currentLevel = 1;
-	TM = Tilemap.getNewTilemap(this.currentLevel, TM.currentTMIndex);
+	TM = Tilemap.getNewTilemap(this.currentLevel, TM.tmIndex);
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
@@ -1876,8 +1950,7 @@ PlayingState.prototype.processWin = function() {
 
 PlayingState.prototype.display = function() {
 	background(0);
-	//image(b, 0, 0, 400, 400);
-	drawBgTile(0, 0, 400, 600);
+	this.drawBgTile(0, 0, 400, 600);
 	
     TM.draw();
 	
@@ -1896,11 +1969,10 @@ PlayingState.prototype.display = function() {
 		CurrentGameState = GameState.PAUSED;
 		KEYS[80] = 0;
 	}
-	if (this.Jan.atLadder && this.currentLevel < 5) {
+	if (this.Jan.atLadder && this.currentLevel <= 10) {
 		this.processNextLevel();
-		//CurrentGameState = GameState.PAUSED;
 	}
-	else if (this.currentLevel >= 5) {
+	else if (this.currentLevel > 10) {
 		this.processWin();
 	}
 };
