@@ -1662,7 +1662,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
-	this.currentLevel = 6;
+	this.currentLevel = 1;
 	TM = Tilemap.getNewTilemap(this.currentLevel, -1);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
