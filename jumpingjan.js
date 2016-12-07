@@ -466,7 +466,7 @@ Mover.prototype.handleCollision = function() {
 	//maxPos.sub(5, 5);
 	
 	this.setPreCollisionVariables();
-	
+
 	this.tm.checkForCollisions(minPos, maxPos, this);
 };
 
@@ -533,11 +533,52 @@ Mover.prototype.update = function() {
 	
 };
 
+var LeverTile = function(tile) {
+	var pos = Tilemap.getCoordinateFromTile(tile);
+	Mover.apply(this, [pos.x, pos.y]);
+		
+	this.active = false;
+	
+	this.affectedObjects = [];
+};
+
+LeverTile.prototype = Object.create(Mover.prototype);
+LeverTile.prototype.constructor = LeverTile;
+
+LeverTile.prototype.toggle = function() {
+	this.active = !this.active;
+	
+	for (var i = 0; i < this.affectedObjects.length; i++) {
+		this.affectedObjects[i].effectCallback(this.active);
+	}
+};
+
+LeverTile.prototype.addAffectedObject = function(affected) {
+	this.affectedObjects.push(affected);
+};
+
+LeverTile.prototype.draw = function() { 
+	var leverColor = color(77, 64, 32);
+    strokeWeight(8);
+	stroke(leverColor);
+	
+	if (this.active) {
+		line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x-TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
+	}
+	else {
+		line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x+TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
+	}
+    strokeWeight(1);
+    
+    fill(leverColor);
+    arc(this.position.x, this.position.y+TILE_SIZE/2, TILE_SIZE*0.8, TILE_SIZE*0.6, PI, TWO_PI);
+};
+
 /***************************************************************************
 					PLATFORM CLASS
 ***************************************************************************/
 var Platform = function(x, y, width) {
-	Mover.apply(this, arguments);
+	Mover.apply(this, [x, y, -1]);
 	
 	this.width = width;
 	this.height = TILE_SIZE;
@@ -571,7 +612,7 @@ var SandBlock = function(x, y, width, grassFlag) {
 };
 
 SandBlock.prototype = Object.create(Platform.prototype);
-SandBlock.prototype.constructor = Platform;
+SandBlock.prototype.constructor = SandBlock;
 
 SandBlock.sandSpots = [];
 SandBlock.img = 0;
@@ -623,7 +664,7 @@ SandBlock.prototype.draw = function() {
 var HalfGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
 
 HalfGroundBlock.prototype = Object.create(Platform.prototype);
-HalfGroundBlock.prototype.constructor = Platform;
+HalfGroundBlock.prototype.constructor = HalfGroundBlock;
 
 HalfGroundBlock.prototype.draw = function() {
 	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
@@ -639,7 +680,7 @@ HalfGroundBlock.prototype.draw = function() {
 
 var MidGroundBlock = function(x, y, width, hasGrass) {Platform.apply(this, arguments);this.hasGrass=hasGrass};
 MidGroundBlock.prototype = Object.create(Platform.prototype);
-MidGroundBlock.prototype.constructor = Platform;
+MidGroundBlock.prototype.constructor = MidGroundBlock;
 
 MidGroundBlock.prototype.draw = function() {
 	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
@@ -662,7 +703,7 @@ MidGroundBlock.prototype.draw = function() {
 
 var LowerGroundBlock = function(x, y, width) {Platform.apply(this, arguments);};
 LowerGroundBlock.prototype = Object.create(Platform.prototype);
-LowerGroundBlock.prototype.constructor = Platform;
+LowerGroundBlock.prototype.constructor = LowerGroundBlock;
 
 LowerGroundBlock.prototype.draw = function() {
 	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
@@ -673,12 +714,14 @@ LowerGroundBlock.prototype.draw = function() {
 
 /**************************************************************************/
 var Flatform = function(x, y, orientation) {
-	Platform.apply(this, arguments);
+	Platform.apply(this, [x, y, TILE_SIZE]);
 	
 	this.width = TILE_SIZE;
 	this.height = TILE_SIZE/5;
 	
 	this.orientation = orientation;
+	
+	this.color = color(80, 140, 200);
 };
 
 Flatform.getPositionFromTile = function(tile, orientation) {
@@ -706,9 +749,29 @@ Flatform.prototype.draw = function() {
 	var cornerPos = new PVector(left, 
 			(this.orientation === 't') ? top : this.position.y-this.height/2);
 			
-	fill(80, 140, 200);
+	fill(this.color);
 	rect(cornerPos.x, cornerPos.y, this.width, this.height);
 	var temp = this.getBoundingBoxEdges();
+};
+
+/**************************************************************************/
+var InvisibleFlatform = function(x, y, orientation) {
+	Flatform.apply(this, arguments);
+	
+	this.enabled = false;
+};
+
+InvisibleFlatform.prototype = Object.create(Flatform.prototype);
+InvisibleFlatform.prototype.constructor = InvisibleFlatform;
+
+InvisibleFlatform.prototype.effectCallback = function(status) {
+	this.enabled = status;
+};
+
+InvisibleFlatform.prototype.draw = function() {
+	if (this.enabled) {
+		Flatform.prototype.draw.call(this);
+	}
 };
 
 /***************************************************************************
@@ -947,6 +1010,14 @@ Player.prototype.keyboardCallback = function() {
 		
 		//KEYS[68] = 0;
 	}
+	
+	if (KEYS[32] === 1) {
+		if (this.atActionable) {
+			this.atActionable.toggle();
+		}
+		
+		KEYS[32] = 0;
+	}
 };
 
 Player.prototype.update = function() {
@@ -1114,6 +1185,8 @@ var Tilemap = function(tm, tmIndex) {
 	this.tmIndex = tmIndex;
 	this.walls = [];
 	this.platforms = [];
+	this.actionables = [];
+	this.actionables_affected = [];
 	
 	this.size = TILE_SIZE;
 	
@@ -1123,7 +1196,7 @@ var Tilemap = function(tm, tmIndex) {
             switch(this.TM[row][col]) {
                 case 'p':
 					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
-                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, true));
+                    this.platforms.push(new Platform(newCoord.x, newCoord.y, this.size));
                     break;
 				case 'h':
 					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
@@ -1160,27 +1233,30 @@ var Tilemap = function(tm, tmIndex) {
 				case '+':
 					this.ladderTile = {row:row, col:col};
 					break;
+				case 'a':
+					this.actionables.push(new LeverTile({row:row, col:col}));
+					break;
+				case 'i':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
+					this.actionables_affected.push(new InvisibleFlatform(newCoord.x, newCoord.y, 't'));
+					break;
                 default:
                     // Do nothing
             }
         }
 	}
 	
-	// Initialize Walls list
-	for (var row = 0; row < this.TM.length; row++) {
-        for (var col = 0; col < this.TM[row].length; col++) {
-            switch(this.TM[row][col]) {
-                case 'w':
-                    this.walls.push({x:col*this.size, y:row*this.size});
-                    break;
-                default:
-                    // Do nothing
-            }
-        }
-    }
+	// Link actionables to affected actionable objects
+	if (this.actionables.length <= this.actionables_affected.length) {
+		for (var i = 0; i < this.actionables.length; i++) {
+			this.actionables[i].addAffectedObject(this.actionables_affected[i]);
+		}
+	}
 };
 
 var getAABBvsAABB_Distance = function(a, b) {
+	console.log(a);
+	console.log(b);
 	return PVector.sub(b.position, a.position);
 };
 
@@ -1241,31 +1317,65 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 	maxV.add(0.5, 0.5);
 	var maxTile = Tilemap.getTileFromCoordinate(maxV);
 	// Possibly add a little wiggle room to maxTile like +0.5
+	object.atActionable = false;
 
+	// TODO could optimize the object searches. Currently just linear searches. Won't scale for huge TM's
 	for (var r = max(this.getMinRow(), minTile.row); r <= min(this.getMaxRow(), maxTile.row); r++) {
 		for (var c = max(this.getMinCol(), minTile.col); c <= min(this.getMaxCol(), maxTile.col); c++) {
-			if (this.TM[r][c] === '+') {
+			var currentTile = this.TM[r][c];
+			
+			if (currentTile === '+') {
 				object.atLadder = true;
 				return;
 			}
-            else if (this.TM[r][c] !== ' ') {
-				var currentPlatform = 0;
-				// Get the tile's AABB
-				for (var i = 0; i < this.platforms.length; i++) {
-					var tilePos = Tilemap.getTileFromCoordinate(this.platforms[i].position);
+			else if (currentTile === 'a') {
+				// Get the actionable object
+				for (var i = 0; i < this.actionables.length; i++) {
+					var tilePos = Tilemap.getTileFromCoordinate(this.actionables[i].position);
 					if (tilePos.row === r && tilePos.col === c) {
-						currentPlatform = this.platforms[i];
+						object.atActionable = this.actionables[i];
 						break;
+					}
+				}							
+			}
+            else { // Collision
+				var currentPlatform = 0;
+				if (currentTile === 'i') {
+					var affectedObject = 0;
+					for (var i = 0; i < this.actionables_affected.length; i++) {
+						var tilePos = Tilemap.getTileFromCoordinate(this.actionables_affected[i].position);
+						if (tilePos.row === r && tilePos.col === c) {
+							currentPlatform = this.actionables_affected[i];
+							object.atActionable = this.actionables_affected[i];
+							break;
+						}
+					}
+					
+					if (!object.atActionable.enabled) {
+						console.log('InvisBlock disabled @ x: ' + object.atActionable.position.x);
+						continue;
 					}
 				}
 				
-				var delta = getAABBvsAABB_Distance(object, currentPlatform);
-				var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
-				var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm, object);
+				
+				if (currentTile !== ' ') {
+					// Get the platform object to get AABB
+					for (var i = 0; i < this.platforms.length; i++) {
+						var tilePos = Tilemap.getTileFromCoordinate(this.platforms[i].position);
+						if (tilePos.row === r && tilePos.col === c) {
+							currentPlatform = this.platforms[i];
+							break;
+						}
+					}
+					
+					var delta = getAABBvsAABB_Distance(object, currentPlatform);
+					var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
+					var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm, object);
 
-				var collisionDetected = object.checkCollision(currentPlatform);
-				if (collisionDetected && !internalColResult) {
-					object.CollisionResolution(contact.norm, contact.dist);
+					var collisionDetected = object.checkCollision(currentPlatform);
+					if (collisionDetected && !internalColResult) {
+						object.CollisionResolution(contact.norm, contact.dist);
+					}
 				}
 			}
         }
@@ -1297,6 +1407,14 @@ Tilemap.prototype.draw = function(){
 		this.platforms[i].draw();
 	}
 
+	for (var i = 0; i < this.actionables.length; i++) {
+		this.actionables[i].draw();
+	}
+	
+	for (var i = 0; i < this.actionables_affected.length; i++) {
+		this.actionables_affected[i].draw();
+	}
+	
 	if(this.ladderTile) {
 		this.drawLadder(this.ladderTile);
 	}
@@ -1435,8 +1553,8 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				["+         ",
 				"dd        ",
 				"ss   s    ",
-				"ss       p",
-				"ss  t   p ",
+				"ss       s",
+				"ss  t   s ",
 				"          ",
 				"  d       ",
 				"          ",
@@ -1450,17 +1568,17 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				
 				["+         ",
 				"dd        ",
-				"ss   s    ",
-				"ss       p",
-				"ss  t   p ",
+				"ss i      ",
+				"ss        ",
+				"ss        ",
+				"      i   ",
 				"          ",
-				"  d       ",
+				"          ",
+				"         a",
 				"         s",
-				"         s",
-				"d        s",
 				"        ds",
 				"       dss",
-				"      dsss",
+				"a     dsss",
 				"ddddddssss",
 				"ssssssssss"]
 			];
@@ -1475,8 +1593,7 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 	while(tmNum === currentTMIndex) {
 		tmNum = floor(random(tms.length));
 	}
-	console.log('ct:' + currentTMIndex);
-	console.log("tn: " + tmNum);
+
 	return new Tilemap(tms[tmNum], tmNum);
 };
 
@@ -1522,7 +1639,7 @@ var TM_wallsample = ["wwwwwwwwwwwwwwwwwwww",
     "w     ww    ww  wwww",
     "wwwwwwwwwwwwwwwwwwww"];
 			
-var TM = Tilemap.getNewTilemap(1, -1);
+var TM = 0;
 
 var GameState = {
     START_MENU : 0,
@@ -1545,8 +1662,9 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
+	this.currentLevel = 6;
+	TM = Tilemap.getNewTilemap(this.currentLevel, -1);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
-	this.currentLevel = 5;
 };
 var HelpMenuState = function() {
 	this.nextButton = new ArrowButton(350, 350, "Next");
@@ -1948,6 +2066,8 @@ PlayingState.prototype.processWin = function() {
 	// TODO
 };
 
+PlayingState.prototype.MouseCallback = function() {};
+
 PlayingState.prototype.display = function() {
 	background(0);
 	this.drawBgTile(0, 0, 400, 600);
@@ -1969,6 +2089,7 @@ PlayingState.prototype.display = function() {
 		CurrentGameState = GameState.PAUSED;
 		KEYS[80] = 0;
 	}
+	
 	if (this.Jan.atLadder && this.currentLevel <= 10) {
 		this.processNextLevel();
 	}
