@@ -365,10 +365,10 @@ Mover.prototype.checkCollision = function(mover) {
 	
 	var l1 = new Coord(myEdges.left*scaleFactor, myEdges.top*scaleFactor);
     var r1 = new Coord(myEdges.right*scaleFactor, myEdges.bottom*scaleFactor);
-	l1.x += this.nextPosition.x-this.position.x;
-	r1.x += this.nextPosition.x-this.position.x;
-	l1.y += this.nextPosition.y-this.position.y;
-	r1.y += this.nextPosition.y-this.position.y;
+	//l1.x += this.nextPosition.x-this.position.x;
+	//r1.x += this.nextPosition.x-this.position.x;
+	//l1.y += this.nextPosition.y-this.position.y;
+	//r1.y += this.nextPosition.y-this.position.y;
     var l2 = new Coord(otherEdges.left*scaleFactor, otherEdges.top*scaleFactor);
     var r2 = new Coord(otherEdges.right*scaleFactor, otherEdges.bottom*scaleFactor);
     
@@ -748,10 +748,9 @@ Flatform.prototype.draw = function() {
 	
 	var cornerPos = new PVector(left, 
 			(this.orientation === 't') ? top : this.position.y-this.height/2);
-			
+	noStroke();
 	fill(this.color);
 	rect(cornerPos.x, cornerPos.y, this.width, this.height);
-	var temp = this.getBoundingBoxEdges();
 };
 
 /**************************************************************************/
@@ -980,7 +979,7 @@ Player.prototype.resolveLanding = function() {
 };
 
 Player.prototype.keyboardCallback = function() {
-	if (KEYS[87] === 2) { // w was pressed - Jump
+	if (KEYS[87] === 1) { // w was pressed - Jump
 		if (this.jumped < 2) {
 			this.applyForce(this.jumpForce);
 			this.jump();
@@ -1255,8 +1254,6 @@ var Tilemap = function(tm, tmIndex) {
 };
 
 var getAABBvsAABB_Distance = function(a, b) {
-	console.log(a);
-	console.log(b);
 	return PVector.sub(b.position, a.position);
 };
 
@@ -1352,7 +1349,6 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 					}
 					
 					if (!object.atActionable.enabled) {
-						console.log('InvisBlock disabled @ x: ' + object.atActionable.position.x);
 						continue;
 					}
 				}
@@ -2107,20 +2103,24 @@ var mouseClicked = function() {
 
 keyPressed = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
-		KEYS[keyCode] = 1;
+		if (KEYS[keyCode] !== 1) {
+			KEYS[keyCode] = 1;
+		}
 	}
 };
 
 keyReleased = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
 		if (keyCode === 87) {
-			KEYS[87] = 2;
+			KEYS[87] = 0;
 		}
 		else {
 			KEYS[keyCode] = 0;
 		}
 	}
 };
+
+
 
 /* --------------------- END User Control --------------------- \*/
 var draw = function() {
