@@ -619,7 +619,7 @@ SandBlock.img = 0;
 SandBlock.img_g = 0;
 
 SandBlock.prototype.draw = function() {
-	if (SandBlock.img !== 0) {
+	if (SandBlock.img !== 0 && SandBlock.img_g !== 0) {
 		if (this.hasGrass) {
 			image(SandBlock.img_g, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 		}
@@ -754,17 +754,18 @@ Flatform.prototype.draw = function() {
 };
 
 /**************************************************************************/
-var InvisibleFlatform = function(x, y, orientation) {
+var InvisibleFlatform = function(x, y, orientation, defEnabled) {
 	Flatform.apply(this, arguments);
 	
-	this.enabled = false;
+	this.enabled = defEnabled;
+	this.enabled |= false;
 };
 
 InvisibleFlatform.prototype = Object.create(Flatform.prototype);
 InvisibleFlatform.prototype.constructor = InvisibleFlatform;
 
 InvisibleFlatform.prototype.effectCallback = function(status) {
-	this.enabled = status;
+	this.enabled = !this.enabled;
 };
 
 InvisibleFlatform.prototype.draw = function() {
@@ -1011,6 +1012,7 @@ Player.prototype.keyboardCallback = function() {
 	}
 	
 	if (KEYS[32] === 1) {
+		console.log(this.atActionable);
 		if (this.atActionable) {
 			this.atActionable.toggle();
 		}
@@ -1239,6 +1241,10 @@ var Tilemap = function(tm, tmIndex) {
 					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
 					this.actionables_affected.push(new InvisibleFlatform(newCoord.x, newCoord.y, 't'));
 					break;
+				case 'j':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 'b');
+					this.actionables_affected.push(new InvisibleFlatform(newCoord.x, newCoord.y, 'b', true));
+					break;
                 default:
                     // Do nothing
             }
@@ -1297,7 +1303,7 @@ Tilemap.prototype.getMaxCol = function() {
 };
 
 Tilemap.prototype.isTileValid = function(tile) {
-	return (tile.row <= this.getMinRow() || tile.col <= this.getMinCol() || tile.row > this.getMaxRow() || tile.col > this.getMaxCol());
+	return (tile.row <= this.getMinRow() && tile.col <= this.getMinCol() && tile.row > this.getMaxRow() && tile.col > this.getMaxCol());
 };
 
 Tilemap.prototype.checkInternalCollision = function(tile, normal, object) {
@@ -1305,6 +1311,7 @@ Tilemap.prototype.checkInternalCollision = function(tile, normal, object) {
 	if (!this.isTileValid(nextTile)) {
 		return false;
 	}
+	console.log(nextTile);
 	var nextTileType = this.getTileTypeAtTile(nextTile);
 	return (nextTileType !== ' ' && object.wasOnGround);
 };
@@ -1330,6 +1337,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				for (var i = 0; i < this.actionables.length; i++) {
 					var tilePos = Tilemap.getTileFromCoordinate(this.actionables[i].position);
 					if (tilePos.row === r && tilePos.col === c) {
+						console.log('atActionable');
 						object.atActionable = this.actionables[i];
 						break;
 					}
@@ -1337,18 +1345,17 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 			}
             else { // Collision
 				var currentPlatform = 0;
-				if (currentTile === 'i') {
+				if (currentTile === 'i' || currentTile === 'j') {
 					var affectedObject = 0;
 					for (var i = 0; i < this.actionables_affected.length; i++) {
 						var tilePos = Tilemap.getTileFromCoordinate(this.actionables_affected[i].position);
 						if (tilePos.row === r && tilePos.col === c) {
 							currentPlatform = this.actionables_affected[i];
-							object.atActionable = this.actionables_affected[i];
 							break;
 						}
 					}
 					
-					if (!object.atActionable.enabled) {
+					if (!currentPlatform.enabled) {
 						continue;
 					}
 				}
@@ -1363,7 +1370,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 							break;
 						}
 					}
-					
+					console.log('row: ' + r + ' col: ' + c);
 					var delta = getAABBvsAABB_Distance(object, currentPlatform);
 					var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
 					var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm, object);
@@ -1381,6 +1388,8 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 Tilemap.prototype.drawLadder = function(tile) {
     var corner = Tilemap.getCoordinateFromTile(tile, 1);
     
+	stroke(1);
+	stroke(10, 10, 10);
     fill(147, 58, 0);
 	rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
     rect(corner.x, corner.y+TILE_SIZE*0.3, TILE_SIZE, TILE_SIZE*0.2);
@@ -1563,20 +1572,68 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				"ssssssssss"],
 				
 				["+         ",
-				"dd        ",
-				"ss i      ",
-				"ss        ",
-				"ss        ",
+				 "dd        ",
+				 "ss        ",
+				 "ss i      ",
+				 "ss        ",
+				 "          ",
+				 "      i   ",
+				 "          ",
+				 "         a",
+				 "         s",
+				 "        ds",
+				 "       dss",
+				 "a     dsss",
+				 "ddddddssss",
+				 "ssssssssss"],
+				
+				["         +",
 				"      i   ",
+				" d        ",
+				"as        ",
+				"ss        ",
+				"  i       ",
 				"          ",
+				"    f     ",
 				"          ",
 				"         a",
-				"         s",
 				"        ds",
 				"       dss",
-				"a     dsss",
+				"      dsss",
 				"ddddddssss",
-				"ssssssssss"]
+				"ssssssssss"],
+				
+				["       ss+",
+				"a         ",
+				"s        t",
+				"          ",
+				"     i    ",
+				"  i       ",
+				"          ",
+				"    f     ",
+				"          ",
+				"j         ",
+				"ad      da",
+				"s      dss",
+				"s     dsss",
+				"sdddddssss",
+				"ssssssssss"],
+				
+				["ssssss+sss",
+				 "     sjsss",
+				 "da   s  ss",
+				 "ss   s    ",
+				 "    d  sss",
+				 "   ds     ",
+				 "          ",
+				 "          ",
+				 "    i     ",
+				 "          ",
+				 " m       j",
+				 " l      da",
+				 "al     dss",
+				 "sddddddsss",
+				 "ssssssssss"]
 			];
 	}
 	else if (currentLevel <= 15) {
@@ -1658,7 +1715,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
-	this.currentLevel = 1;
+	this.currentLevel = 6;
 	TM = Tilemap.getNewTilemap(this.currentLevel, -1);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
