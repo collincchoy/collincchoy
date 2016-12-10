@@ -991,8 +991,11 @@ Player.prototype.keyboardCallback = function() {
 	}
 	
 	if (KEYS[65] === 1) { // a was pressed - Walk Left
+		var inAirTurn = false;
 		if (this.direction === 1 && this.onGround) {this.legAngleReset();this.armAngleReset();}
+		else if (this.direction === 1) {this.jumpReset(); inAirTurn = true;}
 		this.direction = -1;
+		if (inAirTurn) {this.jump();}
 		if (this.onGround) {
 			this.walk();
 		}
@@ -1001,8 +1004,11 @@ Player.prototype.keyboardCallback = function() {
 		//KEYS[65] = 0;
 	}
 	else if (KEYS[68] === 1) { // d was pressed - Walk Right
+		var inAirTurn = false;
 		if (this.direction === -1 && this.onGround) {this.legAngleReset();this.armAngleReset();}
+		else if (this.direction === -1) {this.jumpReset(); inAirTurn = true;}
 		this.direction = 1;
+		if (inAirTurn) {this.jump();}
 		if (this.onGround) {
 			this.walk();
 		}
@@ -1814,7 +1820,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
-	this.currentLevel = 6;
+	this.currentLevel = 1;
 	TM = new Tilemap(this.currentLevel);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
@@ -1851,7 +1857,7 @@ var EndState = function() {
 
 var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState(), new EndState()];
 
-var CurrentGameState = GameState.END; 
+var CurrentGameState = GameState.START_MENU; 
 //var CurrentGameState = GameState.PLAYING;
 /* --------------------- Menu Views --------------------- \*/
 StartMenuState.prototype.setMountains = function() {
@@ -2206,7 +2212,7 @@ PlayingState.prototype.resetGame = function() {
 
 PlayingState.prototype.showCurrentLevel = function() {
 	fill(240, 240, 240);
-	text("Level: " + (this.currentLevel === 11) ? "END" : this.currentLevel, 370, 580);
+	text("Level: " + ((this.currentLevel === 11) ? "END" : this.currentLevel), 370, 580);
 };
 
 PlayingState.prototype.processWin = function() {
