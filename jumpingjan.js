@@ -1843,6 +1843,13 @@ var ControlsMenuState = function() {
 	this.menuButton = new Button(200, 350, "Menu");
 };
 var PausedState = function() {
+	
+	this.tips = ["After jumping, Jan can jump once more in the air. Use her two jumps wisely.",
+					"Maximize Jan's jumping distance by timing your second jump just right. Experiment to find the best timing.", 
+					"Don't stray too far left or right. Strange forces seem to pull Jan upward...",
+					"Don't forget that [SPACE] is your action key!", 
+					"Sometimes platforms will even help push Jan up."];
+	
     this.continueButton = new Button(200, 200, "Continue");
     this.helpButton = new Button(200, 250, "Help");
     this.exitButton = new Button(200, 300, "Exit");
@@ -2103,6 +2110,17 @@ OptionsMenuState.prototype.MouseCallback = function() {
     }
 };
 
+PausedState.prototype.generateNewTip = function() {
+	this.tip = this.tips[floor(random(this.tips.length))];
+};
+
+PausedState.prototype.showTip = function(y) {
+	fill(0);
+	textSize(18);
+	
+	text("Tips & Tricks: " + this.tip, 50, y-100, 300, 100);
+}
+
 PausedState.prototype.display = function() {
 	background(0);
 	TM.draw();
@@ -2133,6 +2151,8 @@ PausedState.prototype.display = function() {
     this.continueButton.draw();
     this.helpButton.draw();
     this.exitButton.draw();
+	
+	this.showTip(500);
 };
 
 PausedState.prototype.MouseCallback = function() {
@@ -2240,6 +2260,7 @@ PlayingState.prototype.display = function() {
 	this.showCurrentLevel();
 
 	if (KEYS[80] === 1) {
+		GameStates[GameState.PAUSED].generateNewTip();
 		CurrentGameState = GameState.PAUSED;
 		KEYS[80] = 0;
 	}
