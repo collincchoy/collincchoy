@@ -1012,7 +1012,6 @@ Player.prototype.keyboardCallback = function() {
 	}
 	
 	if (KEYS[32] === 1) {
-		console.log(this.atActionable);
 		if (this.atActionable) {
 			this.atActionable.toggle();
 		}
@@ -1181,15 +1180,89 @@ Player.prototype.draw = function() {
 /***************************************************************************
 					TILEMAP CLASS
 ***************************************************************************/
-var Tilemap = function(tm, tmIndex) {
-	this.TM = tm;
-	this.tmIndex = tmIndex;
+var Tilemap = function(currentLevel) {
+	this.getNextTilemap(currentLevel);
+	//this.TM = tms[0];
 	this.walls = [];
 	this.platforms = [];
 	this.actionables = [];
 	this.actionables_affected = [];
 	
 	this.size = TILE_SIZE;
+	
+	// initialize Platforms list
+	for (var row = 0; row < this.TM.length; row++) {
+		for (var col = 0; col < this.TM[row].length; col++) {
+            switch(this.TM[row][col]) {
+                case 'p':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new Platform(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 'h':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new HalfGroundBlock(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 's':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, false));
+                    break;
+				case 'd':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new SandBlock(newCoord.x, newCoord.y, this.size, true));
+                    break;
+				case 'm':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new MidGroundBlock(newCoord.x, newCoord.y, this.size, true));
+                    break;
+				case 'n':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new MidGroundBlock(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 'l':
+					var newCoord = {x:col*this.size + this.size/2, y: row*this.size + this.size/2};
+                    this.platforms.push(new LowerGroundBlock(newCoord.x, newCoord.y, this.size));
+                    break;
+				case 'f':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 'b');
+					this.platforms.push(new Flatform(newCoord.x, newCoord.y, 'b'));
+					break;
+				case 't':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
+					this.platforms.push(new Flatform(newCoord.x, newCoord.y, 't'));
+					break;
+				case '+':
+					this.ladderTile = {row:row, col:col};
+					break;
+				case 'a':
+					this.actionables.push(new LeverTile({row:row, col:col}));
+					break;
+				case 'i':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 't');
+					this.actionables_affected.push(new InvisibleFlatform(newCoord.x, newCoord.y, 't'));
+					break;
+				case 'j':
+					var newCoord = Flatform.getPositionFromTile({row:row, col:col}, 'b');
+					this.actionables_affected.push(new InvisibleFlatform(newCoord.x, newCoord.y, 'b', true));
+					break;
+                default:
+                    // Do nothing
+            }
+        }
+	}
+	
+	// Link actionables to affected actionable objects
+	if (this.actionables.length <= this.actionables_affected.length) {
+		for (var i = 0; i < this.actionables.length; i++) {
+			this.actionables[i].addAffectedObject(this.actionables_affected[i]);
+		}
+	}
+};
+
+Tilemap.prototype.reset = function() {
+	this.walls = [];
+	this.platforms = [];
+	this.actionables = [];
+	this.actionables_affected = [];
 	
 	// initialize Platforms list
 	for (var row = 0; row < this.TM.length; row++) {
@@ -1311,7 +1384,6 @@ Tilemap.prototype.checkInternalCollision = function(tile, normal, object) {
 	if (!this.isTileValid(nextTile)) {
 		return false;
 	}
-	console.log(nextTile);
 	var nextTileType = this.getTileTypeAtTile(nextTile);
 	return (nextTileType !== ' ' && object.wasOnGround);
 };
@@ -1337,7 +1409,6 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 				for (var i = 0; i < this.actionables.length; i++) {
 					var tilePos = Tilemap.getTileFromCoordinate(this.actionables[i].position);
 					if (tilePos.row === r && tilePos.col === c) {
-						console.log('atActionable');
 						object.atActionable = this.actionables[i];
 						break;
 					}
@@ -1370,7 +1441,7 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 							break;
 						}
 					}
-					console.log('row: ' + r + ' col: ' + c);
+
 					var delta = getAABBvsAABB_Distance(object, currentPlatform);
 					var contact = getAABBvsAABB_ContactInfo(object, currentPlatform, delta);
 					var internalColResult = this.checkInternalCollision({'row':r, 'col':c}, contact.norm, object);
@@ -1468,10 +1539,25 @@ Tilemap.prototype.getAdjacentTiles = function(tile) {
 	return adjacentTiles;
 };
 
-Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
+Tilemap.prototype.getNextTilemap = function(currentLevel) {
+	console.log(this.TM_sequence);
+	/**
+	 * Randomize array element order in-place.
+	 * Using Durstenfeld shuffle algorithm.
+	 */
+	function shuffleArray(array) {
+		for (var i = array.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var temp = array[i];
+			array[i] = array[j];
+			array[j] = temp;
+		}
+		return array;
+	}
+	
 	var tms = [];
-	if(currentLevel <= 5) {
-		tms = [
+	if(currentLevel === 1) {
+		this.TM_sequence = [
 				[" +        ",
 				" p        ",
 				"     p    ",
@@ -1552,9 +1638,11 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				"lmmmmmmmmn",
 				"llllllllll"]
 			];
+		shuffleArray(this.TM_sequence);
+		this.TM = this.TM_sequence.pop();
 	}
-	else if (currentLevel <= 10) {
-		tms = [
+	else if (currentLevel === 6) {
+		this.TM_sequence = [
 				["+         ",
 				"dd        ",
 				"ss   s    ",
@@ -1635,19 +1723,29 @@ Tilemap.getNewTilemap = function(currentLevel, currentTMIndex) {
 				 "sddddddsss",
 				 "ssssssssss"]
 			];
+		shuffleArray(this.TM_sequence);
+		this.TM = this.TM_sequence.pop();
 	}
-	else if (currentLevel <= 15) {
+	else if (currentLevel > 10) {
+		// TODO End Of Game
+	}
+	else {
+		this.TM = this.TM_sequence.pop();
+	}
+	
+	this.reset();
+	/*else if (currentLevel <= 15) {
 		// TODO
 	}
 	else if (currentLevel <= 20) {
 		// TODO
 	}
-	var tmNum = currentTMIndex;
+	/*var tmNum = currentTMIndex;
 	while(tmNum === currentTMIndex) {
 		tmNum = floor(random(tms.length));
-	}
+	}*/
 
-	return new Tilemap(tms[tmNum], tmNum);
+	//return new Tilemap(tms, tmNum);
 };
 
 // Param: Coord - {x: _, y: _}
@@ -1716,7 +1814,7 @@ var StartMenuState = function() {
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.currentLevel = 1;
-	TM = Tilemap.getNewTilemap(this.currentLevel, -1);
+	TM = new Tilemap(this.currentLevel);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
 var HelpMenuState = function() {
@@ -2032,7 +2130,6 @@ PausedState.prototype.MouseCallback = function() {
     }  
 };
 
-var getBgTilePos = [];
 PlayingState.prototype.getBgTile = function(x, y, w, h) {
 	var size = w;
     var corner = {x:x-w/2, y:y-h/2};
@@ -2064,21 +2161,6 @@ PlayingState.prototype.getBgTile = function(x, y, w, h) {
         fill(c3);
         ellipse(m_x-m_size*0.05, m_y-m_size*0.03, m_size*0.6, m_size*0.6);
     };
-	/*var numCircles = 0;
-	if (getBgTilePos.length === 0 || frameCount % 12 === 0) {
-		numCircles = random(30);
-		getBgTilePos = [];
-		for (var i = 0; i < numCircles; i++) {
-			var randPos = {x:x+w*random()-w/2, y:y+h*random()-h/2};
-			var randTile = Tilemap.getTileFromCoordinate(randPos);
-			randPos = Tilemap.getCoordinateFromTile(randTile);
-			getBgTilePos.push([randPos.x, randPos.y, w*random()*0.4]);
-		}
-	}
-	
-	for (var i = 0; i < getBgTilePos.length; i++) {
-		drawBall(getBgTilePos[i][0], getBgTilePos[i][1], getBgTilePos[i][2]);
-	}*/
 	
 	drawBall(x+size*0.2, y+size*0.1, size*0.48);
 	drawBall(x-size*0.19, y-size*0.15, size*0.4);
@@ -2097,14 +2179,14 @@ PlayingState.prototype.drawBgTile = function(x, y, w, h) {
 
 PlayingState.prototype.processNextLevel = function() {
 	this.currentLevel += 1;
-	TM = Tilemap.getNewTilemap(this.currentLevel, TM.tmIndex);
+	TM.getNextTilemap(this.currentLevel);
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
 
 PlayingState.prototype.resetGame = function() {
 	this.currentLevel = 1;
-	TM = Tilemap.getNewTilemap(this.currentLevel, TM.tmIndex);
+	TM.getNextTilemap(this.currentLevel);
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
@@ -2116,7 +2198,7 @@ PlayingState.prototype.showCurrentLevel = function() {
 
 PlayingState.prototype.processWin = function() {
 	this.resetGame();
-	// TODO
+	CurrentGameState = GameState.START_MENU;
 };
 
 PlayingState.prototype.MouseCallback = function() {};
