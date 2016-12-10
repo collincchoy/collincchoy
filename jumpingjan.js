@@ -1799,6 +1799,7 @@ var GameState = {
     OPTIONS_MENU : 3,
     CONTROLS_MENU : 4,
 	PAUSED : 5,
+	END : 6,
 };
 
 var StartMenuState = function() {
@@ -1813,7 +1814,7 @@ var StartMenuState = function() {
 };
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
-	this.currentLevel = 1;
+	this.currentLevel = 6;
 	TM = new Tilemap(this.currentLevel);
 	this.Jan = new Player(startTile.x, startTile.y, TM);
 };
@@ -1821,6 +1822,8 @@ var HelpMenuState = function() {
 	this.nextButton = new ArrowButton(350, 350, "Next");
 };
 var OptionsMenuState = function() {
+	this.testJan = new Player(200, 400);
+	
     this.menuButton = new Button(200, 350, "Menu");
     
 	this.playerColorSelector = new ColorSelector(50+(0.35*300), 180+(0.3*100));
@@ -1838,10 +1841,17 @@ var PausedState = function() {
     this.helpButton = new Button(200, 250, "Help");
     this.exitButton = new Button(200, 300, "Exit");
 };
+var EndState = function() {
+	this.a=random(1500);
+    this.mountains = 0; 
+    this.sun = new Sun();
+	
+	this.menuButton = new Button(200, 370, "Menu");
+};
 
-var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState()];
+var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(), new OptionsMenuState(), new ControlsMenuState(), new PausedState(), new EndState()];
 
-var CurrentGameState = GameState.START_MENU; 
+var CurrentGameState = GameState.END; 
 //var CurrentGameState = GameState.PLAYING;
 /* --------------------- Menu Views --------------------- \*/
 StartMenuState.prototype.setMountains = function() {
@@ -2043,6 +2053,9 @@ OptionsMenuState.prototype.display = function() {
     textSize(30);
     text("Options", 200, 140);
     
+	this.testJan.changeColor(SETTINGS_PLAYER_COLOR);
+	this.testJan.draw();
+	
     // State Constants
     var CONTENT_X1 = 50;
     var CONTENT_X2 = 350;
@@ -2121,7 +2134,7 @@ PausedState.prototype.MouseCallback = function() {
         CurrentGameState = GameState.PLAYING;
     }
     else if (this.helpButton.mouseIsOnMe()) {
-        // CurrentGameState = GameState.HELP_MENU; TODO add way back to play game
+        CurrentGameState = GameState.HELP_MENU; //TODO add way back to play game
     }
     else if (this.exitButton.mouseIsOnMe()) {
         // TODO: Reset all Game variables
@@ -2193,12 +2206,12 @@ PlayingState.prototype.resetGame = function() {
 
 PlayingState.prototype.showCurrentLevel = function() {
 	fill(240, 240, 240);
-	text("Level: " + this.currentLevel, 370, 580);
+	text("Level: " + (this.currentLevel === 11) ? "END" : this.currentLevel, 370, 580);
 };
 
 PlayingState.prototype.processWin = function() {
 	this.resetGame();
-	CurrentGameState = GameState.START_MENU;
+	CurrentGameState = GameState.END;
 };
 
 PlayingState.prototype.MouseCallback = function() {};
@@ -2231,6 +2244,86 @@ PlayingState.prototype.display = function() {
 	else if (this.currentLevel > 10) {
 		this.processWin();
 	}
+};
+
+EndState.prototype.MouseCallback = function() {
+	if (this.menuButton.mouseIsOnMe()) {
+        CurrentGameState = GameState.START_MENU;
+		KEYS = [];
+    }
+};
+
+EndState.prototype.setMountains = function() {
+    this.mountains = [[],[],[],[],[],[]]; 
+    for (var i=0; i<=5; i++) {
+        for (var j=0; j<=40; j++) {
+            var n = noise(this.a);
+            this.mountains[i][j] = map(n,0,1,0,400-i*50);
+            this.a += 0.025;  // ruggedness
+        }
+    }  
+};
+
+EndState.prototype.drawBackground = function() {
+    noStroke();
+    if (this.mountains === 0) {
+        this.setMountains();
+    }
+    // sky
+    var n1 = this.a;  
+    for (var x=0; x<=400; x+=8) {
+        var n2 = 0;
+        for (var y=0; y<=250; y+=8) {
+            var c = map(noise(n1,n2),0,1,0,255);
+            fill(c, c, c+70,150);
+            rect(x,y,8,8);
+            n2 += 0.05; // step size in noise
+        }
+        n1 += 0.02; // step size in noise
+    }
+    this.a -= 0.01;  // speed of clouds
+    
+    // mountains
+    for (x=0; x<=5; x++) {
+        for (var y=0; y<=40; y++) {
+            fill(10 + x*5, 40+x*10, 0);
+            // draw quads of width 10 pixels
+            quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
+        }
+    }
+    
+    this.sun.draw();
+	
+	for (var i = 0; i < groundBlocks.length; i++) {
+		groundBlocks[i].draw();
+	}
+};
+
+EndState.prototype.display = function() {
+	this.drawBackground();
+    fill(20, 20, 20);
+    textSize(30);
+    text("YOU WIN!", 200, 100);
+    
+    // State Constants
+    var CONTENT_X1 = 50;
+    var CONTENT_X2 = 350;
+    var CONTENT_W = CONTENT_X2 - CONTENT_X1;
+    
+    var CONTENT_Y1 = 160;
+    var CONTENT_Y2 = 330;
+    var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
+    
+    // Content Box
+    stroke(0);
+    fill(199, 197, 197, 150);
+    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    fill(0);
+    var instructions = "Jan successfully made it back! After many grueling hours of jumping from platform to platform, she finally made it back up to the surface. It turns out that she must have fallen below to the world beneath the surface. Luckily, her amazing jumping skills enabled her to find her way back up. Let's just hope she doesn't stumble again...\n To Be Continued.";
+    textSize(14);
+    text(instructions, 55, 160, 280, 165);
+    
+    this.menuButton.draw();
 };
 
 /* --------------------- END Menu Views --------------------- \*/
