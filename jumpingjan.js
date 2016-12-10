@@ -1828,7 +1828,8 @@ var HelpMenuState = function() {
 	this.nextButton = new ArrowButton(350, 350, "Next");
 };
 var OptionsMenuState = function() {
-	this.testJan = new Player(200, 400);
+	this.testJan = new Player(200, 450);
+	this.testJan.size = 100;
 	
     this.menuButton = new Button(200, 350, "Menu");
     
