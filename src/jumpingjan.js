@@ -1,18 +1,18 @@
-var sketchProc=function(processingInstance){ with (processingInstance){
-size(400, 600); 
-frameRate(60);
+export var sketchProc=function(PI){
+PI.size(400, 600);
+PI.frameRate(60);
 
 /* /* ^^^^^^^^^^^^^^^^^^^^^ BEGIN PROGRAM CODE ^^^^^^^^^^^^^^^^^^^^^ \*/
 
-angleMode = 'radians';
+PI.angleMode = 'radians';
 var KEYS = [];
-var GRAVITY = new PVector(0,0.6); // TODO remove
-textAlign(CENTER, CENTER);
+var GRAVITY = new PI.PVector(0,0.6); // TODO remove
+PI.textAlign(PI.CENTER, PI.CENTER);
 
 /* --------------------- Button Object --------------------- \*/
 
 var Button = function(x, y, txt) {
-    this.position = new PVector(x, y); // Center of the button
+    this.position = new PI.PVector(x, y); // Center of the button
     this.text = txt;
     
     this.width = 80;
@@ -20,7 +20,10 @@ var Button = function(x, y, txt) {
 };
 
 Button.prototype.mouseIsOnMe = function() {
-    return (mouseX > this.getCornerPositionX('upper_left') && mouseX < this.getCornerPositionX('upper_right')) && (mouseY > this.getCornerPositionY('upper_left') && mouseY < this.getCornerPositionY('lower_right'));
+	return (PI.mouseX > this.getCornerPositionX('upper_left') &&
+          PI.mouseX < this.getCornerPositionX('upper_right')) &&
+      (PI.mouseY > this.getCornerPositionY('upper_left') &&
+       PI.mouseY < this.getCornerPositionY('lower_right'));
 };
 
 /* Expects a string parameter of either 'upper_left', 'upper_right', 'lower_left', 'lower_right' */
@@ -66,23 +69,23 @@ Button.prototype.getVertices = function() {
 
 Button.prototype.draw = function() {
     if (this.mouseIsOnMe()) {
-        fill(200, 200, 200);
-        cursor(HAND);
+        PI.fill(200, 200, 200);
+        PI.cursor(PI.HAND);
     }
     else {
-        noFill();
+        PI.noFill();
     }
 
     var vertices = this.getVertices();
-    beginShape();
+    PI.beginShape();
         for (var i = 0; i < vertices.length;i++) {
-            vertex(vertices[i].x, vertices[i].y);
+            PI.vertex(vertices[i].x, vertices[i].y);
         }
-    endShape(CLOSE);
+    PI.endShape(PI.CLOSE);
     
-    fill(0);
-    textSize(16);
-    text(this.text, this.position.x, this.position.y);
+    PI.fill(0);
+    PI.textSize(16);
+    PI.text(this.text, this.position.x, this.position.y);
 };
 
 /* --------------------- END Button Object --------------------- \*/
@@ -124,16 +127,16 @@ ArrowButton.prototype.getVertices = function() {
 /* --------------------- Color Selector Object --------------------- \*/
 
 var ColorSelectorBox = function(x, y, col) {
-    this.position = new PVector(x, y);
+    this.position = new PI.PVector(x, y);
     this.size = 10;
     
     this.selected = false;
     
-    this.color = (col === 'r') ? color(185, 0, 0) :
-                    (col === 'b') ? color(80, 0, 255) :
-                    (col === 'g') ? color(150, 200, 20) :
-                    (col === 'y') ? color(236, 166, 35) :
-                    color(185, 0, 0);
+    this.color = (col === 'r') ? PI.color(185, 0, 0) :
+                    (col === 'b') ? PI.color(80, 0, 255) :
+                    (col === 'g') ? PI.color(150, 200, 20) :
+                    (col === 'y') ? PI.color(236, 166, 35) :
+                    PI.color(185, 0, 0);
 };
 
 ColorSelectorBox.prototype.setSelected = function(newValue) {
@@ -141,24 +144,24 @@ ColorSelectorBox.prototype.setSelected = function(newValue) {
 };
 
 ColorSelectorBox.prototype.mouseIsOnMe = function() {
-    return (mouseX > this.position.x-this.size/2 && mouseX < this.position.x+this.size/2 && (mouseY > this.position.y-this.size/2 && mouseY < this.position.y+this.size/2));
+    return (PI.mouseX > this.position.x-this.size/2 && PI.mouseX < this.position.x+this.size/2 && (PI.mouseY > this.position.y-this.size/2 && PI.mouseY < this.position.y+this.size/2));
 };
 
 ColorSelectorBox.prototype.draw = function() {
-    strokeWeight( (this.selected) ? 3 : 1 );
-    stroke(0);
+    PI.strokeWeight( (this.selected) ? 3 : 1 );
+    PI.stroke(0);
     
     if (this.mouseIsOnMe()) {
-        cursor(HAND);   
+        PI.cursor(PI.HAND);   
     }
     
-    fill(this.color);
-    rect(this.position.x-this.size/2, this.position.y-this.size/2, this.size, this.size);
-    strokeWeight(1);
+    PI.fill(this.color);
+    PI.rect(this.position.x-this.size/2, this.position.y-this.size/2, this.size, this.size);
+    PI.strokeWeight(1);
 };
 
 var ColorSelector = function(x, y) {
-    this.position = new PVector(x, y);
+    this.position = new PI.PVector(x, y);
     this.items = [];
     this.selectedIndex = 0;
     
@@ -188,7 +191,7 @@ ColorSelector.prototype.setSelectedIndex = function(itemNumber) {
 };
 
 ColorSelector.prototype.mouseIsOnMe = function() {
-    return (mouseX > this.position.x && mouseX < this.position.x+this.getWidth() && (mouseY > this.position.y-20/2 && mouseY < this.position.y+20/2));
+    return (PI.mouseX > this.position.x && PI.mouseX < this.position.x+this.getWidth() && (PI.mouseY > this.position.y-20/2 && PI.mouseY < this.position.y+20/2));
 };
 
 ColorSelector.prototype.draw = function() {
@@ -200,24 +203,24 @@ ColorSelector.prototype.draw = function() {
 var Sun = function() {this.ang = 0; this.maxRayLength = 20;};
 
 Sun.prototype.drawRay = function(len, ang) {
-    pushMatrix();
-    rotate(ang);
+    PI.pushMatrix();
+    PI.rotate(ang);
     var a = len;//random(30);
-    stroke(217, 222, 69);
+    PI.stroke(217, 222, 69);
     //point((x < 130) ? x++ : , 0);
-    line(100, 0, 100+a, 0);
-    popMatrix();
+    PI.line(100, 0, 100+a, 0);
+    PI.popMatrix();
 };
 
 Sun.prototype.draw = function() {
-    strokeWeight(2);
-    fill(217, 222, 69);
-    pushMatrix(); 
-    translate(400, 0);
-    rotate(this.ang+=0.01);
+    PI.strokeWeight(2);
+    PI.fill(217, 222, 69);
+    PI.pushMatrix(); 
+    PI.translate(400, 0);
+    PI.rotate(this.ang+=0.01);
     var cnt = 5;
     var curL = 0;
-    for (var i = 0; i < TWO_PI; i += PI/128) {
+    for (var i = 0; i <  PI.TWO_PI; i += PI/128) {
         if (curL > cnt) {
             curL = -cnt;
         }
@@ -229,8 +232,8 @@ Sun.prototype.draw = function() {
         this.drawRay(this.maxRayLength/len, i);
     }
     
-    ellipse(0, 0, 200, 200);
-    popMatrix();
+    PI.ellipse(0, 0, 200, 200);
+    PI.popMatrix();
 };
 
 /* --------------------- GAME Variables --------------------- \*/
@@ -261,12 +264,12 @@ Coord.prototype.compare = function(other) {
 var splitPoints = function(pts) {
     var p2 = [];
     for (var i = 0; i < pts.length - 1; i++) {
-        p2.push(new PVector(pts[i].x, pts[i].y));
-        p2.push(new PVector((pts[i].x + pts[i+1].x)/2, (pts[i].y +
+        p2.push(new PI.PVector(pts[i].x, pts[i].y));
+        p2.push(new PI.PVector((pts[i].x + pts[i+1].x)/2, (pts[i].y +
 pts[i+1].y)/2));
     }  
-    p2.push(new PVector(pts[i].x, pts[i].y));
-    p2.push(new PVector((pts[0].x + pts[i].x)/2, (pts[0].y +
+    p2.push(new PI.PVector(pts[i].x, pts[i].y));
+    p2.push(new PI.PVector((pts[0].x + pts[i].x)/2, (pts[0].y +
 pts[i].y)/2));
 
 	return p2;
@@ -282,7 +285,7 @@ var average = function(p2, pts) {
     var y = (p2[i].y + pts[0].y)/2;
     pts.splice(0, pts.length);
     for (i = 0; i < p2.length; i++) {
-        pts.push(new PVector(p2[i].x, p2[i].y));   
+        pts.push(new PI.PVector(p2[i].x, p2[i].y));   
     }    
 };    
 
@@ -294,23 +297,23 @@ var subdivide = function(pts) {
 var drawShapeFromVertices = function(vertices, notClosed) {
     notClosed |= false;
     
-    beginShape();
+    PI.beginShape();
     for (var i = 0; i < vertices.length; i++) {
-        vertex(vertices[i].x, vertices[i].y);   
+        PI.vertex(vertices[i].x, vertices[i].y);   
     }
     if (!notClosed) {
-        vertex(vertices[0].x, vertices[0].y);
+        PI.vertex(vertices[0].x, vertices[0].y);
     }
-    endShape();
+    PI.endShape();
 };
 
 // Rotates an (x, y) p1 around an (x, y) p2 by n radians
 var rotateAroundPoint = function(p1, p2, n) {
-    var translatedVertex = new PVector(p1.x-p2.x, p1.y-p2.y);
+    var translatedVertex = new PI.PVector(p1.x-p2.x, p1.y-p2.y);
         
-    var cosn = cos(n);
-    var sinn = sin(n);
-    var rotatedVertex = new PVector(translatedVertex.x*cosn - translatedVertex.y*sinn, translatedVertex.y*cosn + translatedVertex.x*sinn);
+    var cosn =  PI.cos(n);
+    var sinn =  PI.sin(n);
+    var rotatedVertex = new PI.PVector(translatedVertex.x*cosn - translatedVertex.y*sinn, translatedVertex.y*cosn + translatedVertex.x*sinn);
         
     p1.x = rotatedVertex.x+p2.x;            
     p1.y = rotatedVertex.y+p2.y;
@@ -320,11 +323,11 @@ var rotateAroundPoint = function(p1, p2, n) {
 					MOVER BASE CLASS
 ***************************************************************************/
 var Mover = function(x, y, tm) {
-	this.position = new PVector(x, y);
-	this.nextPosition = new PVector(0, 0);
-	this.velocity = new PVector(0, 0);
-	this.nextVelocity = new PVector(0, 0);
-	this.acceleration = new PVector(0, 0);
+	this.position = new PI.PVector(x, y);
+	this.nextPosition = new PI.PVector(0, 0);
+	this.velocity = new PI.PVector(0, 0);
+	this.nextVelocity = new PI.PVector(0, 0);
+	this.acceleration = new PI.PVector(0, 0);
 	
 	this.tm = tm;
 	
@@ -346,7 +349,7 @@ var Mover = function(x, y, tm) {
 };
 
 Mover.prototype.applyForce = function(force) {
-	this.acceleration.add(PVector.div(force, this.mass));
+	this.acceleration.add(PI.PVector.div(force, this.mass));
 };
 
 Mover.prototype.getWidth = function() {return this.width*(this.size/400);};
@@ -400,7 +403,7 @@ Mover.prototype.checkCollision = function(mover) {
     
 	var dy = 1;
 	
-    if (abs(r1.y - l2.y) > dy) {
+    if (PI.abs(r1.y - l2.y) > dy) {
 		return false;
 	}
     
@@ -443,22 +446,22 @@ Mover.prototype.setPreCollisionVariables = function() {
 
 Mover.prototype.handleCollision = function() {
 	// AABB containing current position and next position
-	var minPos = new PVector(0, 0);
-	minPos.x = min(this.position.x, this.nextPosition.x);
-	minPos.y = min(this.position.y, this.nextPosition.y);
-	var maxPos = new PVector(0, 0);
-	maxPos.x = max(this.position.x, this.nextPosition.x);
-	maxPos.y = max(this.position.y, this.nextPosition.y);
+	var minPos = new PI.PVector(0, 0);
+	minPos.x = PI.min(this.position.x, this.nextPosition.x);
+	minPos.y = PI.min(this.position.y, this.nextPosition.y);
+	var maxPos = new PI.PVector(0, 0);
+	maxPos.x = PI.max(this.position.x, this.nextPosition.x);
+	maxPos.y = PI.max(this.position.y, this.nextPosition.y);
 	
 	// Extend AABB to bound entire object - position is from the center
-	minPos.sub(new PVector(this.getWidth()/2, this.getHeight()/2));
-	maxPos.add(new PVector(this.getWidth()/2, this.getHeight()/2));
+	minPos.sub(new PI.PVector(this.getWidth()/2, this.getHeight()/2));
+	maxPos.add(new PI.PVector(this.getWidth()/2, this.getHeight()/2));
 	
 	// Debug Collisions
 	/*fill(255, 0, 0);
-	ellipse(minPos.x, minPos.y, 20, 20);
+	PI.ellipse(minPos.x, minPos.y, 20, 20);
 	fill(0, 0, 255);
-	ellipse(maxPos.x, maxPos.y, 20, 20);*/
+	PI.ellipse(maxPos.x, maxPos.y, 20, 20);*/
 	
 	// Extend AABB a bit more - helps when player is very close to boundary of a cell
 	// Note: not sure if need this or not
@@ -473,17 +476,17 @@ Mover.prototype.handleCollision = function() {
 Mover.prototype.resolveLanding = function() {};
 
 Mover.prototype.CollisionResolution = function(normal, distanceToPlane) {
-	var separation = max(distanceToPlane, 0);
-	var penetration = min(distanceToPlane, 0);
+	var separation = PI.max(distanceToPlane, 0);
+	var penetration = PI.min(distanceToPlane, 0);
 	
 	var dt = 60; // TODO. maybe this should be something
 	var normal_velocity = this.nextVelocity.dot(normal) + separation/dt;	
 	
-	this.nextPosition.sub(PVector.mult(normal, penetration/dt));
+	this.nextPosition.sub(PI.PVector.mult(normal, penetration/dt));
 	
 	if ( normal_velocity < -0.1 ) {
 		// remove normal velocity
-		var temp = PVector.mult(normal, normal_velocity);
+		var temp = PI.PVector.mult(normal, normal_velocity);
 		this.nextVelocity.sub(temp);
 		
 		if (normal.y < 0) {
@@ -501,13 +504,13 @@ Mover.prototype.update = function() {
 		this.applyForce(GRAVITY);
 	}
 	
-	this.nextVelocity = PVector.add(this.velocity, this.acceleration); // TODO maybe don't need this
+	this.nextVelocity = PI.PVector.add(this.velocity, this.acceleration); // TODO maybe don't need this
 	var nextVelocityYDirection = (this.nextVelocity.y > 0) ? 1 : -1;
 	// Clamp max speed
-	this.nextVelocity.y = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.y));
-	//this.nextVelocity.x = nextVelocityYDirection * min(this.maxSpeed, abs(this.nextVelocity.x));
+	this.nextVelocity.y = nextVelocityYDirection * PI.min(this.maxSpeed, PI.abs(this.nextVelocity.y));
+	//this.nextVelocity.x = nextVelocityYDirection * PI.min(this.maxSpeed, PI.abs(this.nextVelocity.x));
 	
-	this.nextPosition.add(PVector.add(this.position, this.nextVelocity));
+	this.nextPosition.add(PI.PVector.add(this.position, this.nextVelocity));
 	
 	if (this.isAffectedByCollisions) {
 		// TODO handle collision
@@ -558,20 +561,20 @@ LeverTile.prototype.addAffectedObject = function(affected) {
 };
 
 LeverTile.prototype.draw = function() { 
-	var leverColor = color(77, 64, 32);
-    strokeWeight(8);
-	stroke(leverColor);
+	var leverColor = PI.color(77, 64, 32);
+    PI.strokeWeight(8);
+	PI.stroke(leverColor);
 	
 	if (this.active) {
-		line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x-TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
+		PI.line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x-TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
 	}
 	else {
-		line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x+TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
+		PI.line(this.position.x, this.position.y+TILE_SIZE*0.4, this.position.x+TILE_SIZE*0.4, this.position.y-TILE_SIZE/4);
 	}
-    strokeWeight(1);
+    PI.strokeWeight(1);
     
-    fill(leverColor);
-    arc(this.position.x, this.position.y+TILE_SIZE/2, TILE_SIZE*0.8, TILE_SIZE*0.6, PI, TWO_PI);
+    PI.fill(leverColor);
+    PI.arc(this.position.x, this.position.y+TILE_SIZE/2, TILE_SIZE*0.8, TILE_SIZE*0.6, PI,  PI.TWO_PI);
 };
 
 /***************************************************************************
@@ -600,9 +603,9 @@ Platform.prototype.draw = function() {
 	var bottom = this.position.y + this.height/2;
 	
 	
-	stroke(218, 200, 198);
-	fill(218, 200, 198);
-	rect(left, top, this.width, this.height);
+	PI.stroke(218, 200, 198);
+	PI.fill(218, 200, 198);
+ PI.rect(left, top, this.width, this.height);
 };
 
 var SandBlock = function(x, y, width, grassFlag) {
@@ -621,40 +624,40 @@ SandBlock.img_g = 0;
 SandBlock.prototype.draw = function() {
 	if (SandBlock.img !== 0 && SandBlock.img_g !== 0) {
 		if (this.hasGrass) {
-			image(SandBlock.img_g, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+			PI.image(SandBlock.img_g, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 		}
 		else {
-			image(SandBlock.img, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+			PI.image(SandBlock.img, this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 		}
 	}
 	else {
-		fill(212, 175, 74);
-		strokeWeight(1);
-		noStroke();
-		rect(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+		PI.fill(212, 175, 74);
+		PI.strokeWeight(1);
+		PI.noStroke();
+	 PI.rect(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 		
 		for (var i = 0; i < 280; i++) {
-			stroke(89, 69, 13);
+			PI.stroke(89, 69, 13);
 			if (SandBlock.sandSpots.length < 280) {
-				SandBlock.sandSpots.push([random(40), random(40)]);
+				SandBlock.sandSpots.push([PI.random(40), PI.random(40)]);
 			}
-			point(SandBlock.sandSpots[i][0]+this.position.x-this.width/2, SandBlock.sandSpots[i][1]+this.position.y-this.height/2);
+			PI.point(SandBlock.sandSpots[i][0]+this.position.x-this.width/2, SandBlock.sandSpots[i][1]+this.position.y-this.height/2);
 		}
 		
 		if (this.hasGrass) {
-			fill(67, 143, 37);
-			noStroke();
+			PI.fill(67, 143, 37);
+			PI.noStroke();
 			var x = this.position.x-this.width/2;
 			var y = this.position.y-this.height/2;
 			
-			ellipse(x+TILE_SIZE*0.23, y+5, TILE_SIZE/2, TILE_SIZE/2);
-			ellipse(x+TILE_SIZE*0.5, y+5, TILE_SIZE/2, TILE_SIZE/2);
-			ellipse(x+TILE_SIZE*0.77, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			PI.ellipse(x+TILE_SIZE*0.23, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			PI.ellipse(x+TILE_SIZE*0.5, y+5, TILE_SIZE/2, TILE_SIZE/2);
+			PI.ellipse(x+TILE_SIZE*0.77, y+5, TILE_SIZE/2, TILE_SIZE/2);
 			
-			SandBlock.img_g = get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+			SandBlock.img_g = PI.get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 		}
 		else {
-			SandBlock.img = get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
+			SandBlock.img = PI.get(this.position.x-this.width/2, this.position.y-this.height/2, TILE_SIZE, TILE_SIZE);
 
 		}
 		
@@ -667,15 +670,15 @@ HalfGroundBlock.prototype = Object.create(Platform.prototype);
 HalfGroundBlock.prototype.constructor = HalfGroundBlock;
 
 HalfGroundBlock.prototype.draw = function() {
-	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
-    fill(154, 51, 19);
-	noStroke();
-    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+	var corner = new PI.PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    PI.fill(154, 51, 19);
+	PI.noStroke();
+    PI.rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
     
-    fill(67, 143, 37);
-    ellipse(corner.x+TILE_SIZE*0.23, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
-    ellipse(corner.x+TILE_SIZE*0.5, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
-    ellipse(corner.x+TILE_SIZE*0.77, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+    PI.fill(67, 143, 37);
+    PI.ellipse(corner.x+TILE_SIZE*0.23, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+    PI.ellipse(corner.x+TILE_SIZE*0.5, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
+    PI.ellipse(corner.x+TILE_SIZE*0.77, corner.y+5, TILE_SIZE/2, TILE_SIZE/2);
 };
 
 var MidGroundBlock = function(x, y, width, hasGrass) {Platform.apply(this, arguments);this.hasGrass=hasGrass};
@@ -683,21 +686,21 @@ MidGroundBlock.prototype = Object.create(Platform.prototype);
 MidGroundBlock.prototype.constructor = MidGroundBlock;
 
 MidGroundBlock.prototype.draw = function() {
-	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
-    fill(154, 51, 19);
-	noStroke();
-    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+	var corner = new PI.PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    PI.fill(154, 51, 19);
+	PI.noStroke();
+    PI.rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
     
-    fill(78, 22, 11);
-    rect(corner.x, corner.y+TILE_SIZE/2, TILE_SIZE, TILE_SIZE/2);
-    ellipse(corner.x+TILE_SIZE*0.2, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
-    ellipse(corner.x+TILE_SIZE*0.5, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
-    ellipse(corner.x+TILE_SIZE*0.8, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    PI.fill(78, 22, 11);
+    PI.rect(corner.x, corner.y+TILE_SIZE/2, TILE_SIZE, TILE_SIZE/2);
+    PI.ellipse(corner.x+TILE_SIZE*0.2, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    PI.ellipse(corner.x+TILE_SIZE*0.5, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
+    PI.ellipse(corner.x+TILE_SIZE*0.8, corner.y+TILE_SIZE*0.6, TILE_SIZE/3, TILE_SIZE/3);
     
 	if (this.hasGrass) {
-		fill(67, 143, 37);
-		noStroke();
-		rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+		PI.fill(67, 143, 37);
+		PI.noStroke();
+	 PI.rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
 	}
 };
 
@@ -706,10 +709,10 @@ LowerGroundBlock.prototype = Object.create(Platform.prototype);
 LowerGroundBlock.prototype.constructor = LowerGroundBlock;
 
 LowerGroundBlock.prototype.draw = function() {
-	var corner = new PVector(this.position.x-this.width/2, this.position.y-this.height/2);
-    fill(78, 22, 11);
-	noStroke();
-    rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
+	var corner = new PI.PVector(this.position.x-this.width/2, this.position.y-this.height/2);
+    PI.fill(78, 22, 11);
+	PI.noStroke();
+    PI.rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE);
 };
 
 /**************************************************************************/
@@ -721,7 +724,7 @@ var Flatform = function(x, y, orientation) {
 	
 	this.orientation = orientation;
 	
-	this.color = color(80, 140, 200);
+	this.color = PI.color(80, 140, 200);
 };
 
 Flatform.getPositionFromTile = function(tile, orientation) {
@@ -746,11 +749,11 @@ Flatform.prototype.draw = function() {
 	var top = this.position.y - this.height/2;
 	var bottom = this.position.y + this.height/2;
 	
-	var cornerPos = new PVector(left, 
+	var cornerPos = new PI.PVector(left, 
 			(this.orientation === 't') ? top : this.position.y-this.height/2);
-	noStroke();
-	fill(this.color);
-	rect(cornerPos.x, cornerPos.y, this.width, this.height);
+	PI.noStroke();
+	PI.fill(this.color);
+ PI.rect(cornerPos.x, cornerPos.y, this.width, this.height);
 };
 
 /**************************************************************************/
@@ -780,8 +783,8 @@ InvisibleFlatform.prototype.draw = function() {
 
 var Player = function(x, y, tm) {
     Mover.apply(this, arguments);
-	this.startPosition = new PVector(x, y);
-    this.position = new PVector(x, y);
+	this.startPosition = new PI.PVector(x, y);
+    this.position = new PI.PVector(x, y);
 	this.mass = 10;
 	this.height = 390;
 	this.width = 300;
@@ -792,14 +795,14 @@ var Player = function(x, y, tm) {
 	this.onGround = true;
 	
 	this.movementSpeed = 3;
-	this.jumpForce = new PVector(0, -25);
+	this.jumpForce = new PI.PVector(0, -25);
 	this.jumped = 0;
 	
 	this.maxSpeed = 20;
 	
 	this.armAngle = 0;
 	
-	this.playerColor = color(236, 166, 35);
+	this.playerColor = PI.color(236, 166, 35);
 	
 	this.direction = 1;
     
@@ -840,12 +843,12 @@ Player.prototype.resetPlayer = function() {
 };
 
 Player.prototype.changeColor = function(col) {
-	this.playerColor = (col === 0) ? color(236, 165, 15) :
-						(col === 1) ? color(185, 0, 0) :
-                    (col === 2) ? color(80, 0, 255) :
-                    (col === 3) ? color(150, 200, 20) :
-                    (col === 4) ? color(228, 232, 16) : 
-									color(236, 165, 15);
+	this.playerColor = (col === 0) ? PI.color(236, 165, 15) :
+						(col === 1) ? PI.color(185, 0, 0) :
+                    (col === 2) ? PI.color(80, 0, 255) :
+                    (col === 3) ? PI.color(150, 200, 20) :
+                    (col === 4) ? PI.color(228, 232, 16) : 
+									PI.color(236, 165, 15);
 };
 
 Player.prototype.getBootVertices = function(center_X, center_Y) {
@@ -930,11 +933,11 @@ Player.prototype.walk = function() {
 };
 
 Player.prototype.jumpReset = function() {
-	var angleIncrement = 3 * TWO_PI / 4;
+	var angleIncrement = 3 *  PI.TWO_PI / 4;
 
     this.rotateArmsByAngle(angleIncrement);
 	
-	this.armAngle -= TWO_PI/4;
+	this.armAngle -=  PI.TWO_PI/4;
 };
 
 Player.prototype.armAngleReset = function() {
@@ -963,7 +966,7 @@ Player.prototype.legAngleReset = function() {
 };
 
 Player.prototype.jump = function() {
-	var angleIncrement = TWO_PI / 4;
+	var angleIncrement =  PI.TWO_PI / 4;
 	this.armAngleReset();
 	this.legAngleReset();
 
@@ -1073,101 +1076,101 @@ Player.prototype.draw = function() {
         frontBoot = this.bootRightVertices_bw;
     }
     
-    pushMatrix();
+    PI.pushMatrix();
     
-    translate(this.position.x-this.size/2, this.position.y-this.size/2);
-	scale(this.size/400);
+    PI.translate(this.position.x-this.size/2, this.position.y-this.size/2);
+	 PI.scale(this.size/400);
 
-    noFill();
+    PI.noFill();
     
     // Back Arm
-    stroke(0);
-    fill(this.playerColor);
+    PI.stroke(0);
+    PI.fill(this.playerColor);
     drawShapeFromVertices(backArm, true);
     
     // Back Hand
-    stroke(0);
-    fill(255, 206, 168);
-    ellipse(backHand.x, backHand.y, 45 , 45);
+    PI.stroke(0);
+    PI.fill(255, 206, 168);
+    PI.ellipse(backHand.x, backHand.y, 45 , 45);
     
     // Body
-    stroke(0);
-    fill(this.playerColor);
-    ellipse(200, 275, 115, 150);
+    PI.stroke(0);
+    PI.fill(this.playerColor);
+    PI.ellipse(200, 275, 115, 150);
     
     // Head
-    stroke(0);
-    fill(255, 206, 168);
-    ellipse(200, 150, 175, 175);
+    PI.stroke(0);
+    PI.fill(255, 206, 168);
+    PI.ellipse(200, 150, 175, 175);
     
     // Eyes
     if (this.direction === 1) {
-        stroke(0);
-        fill(245, 245, 245);
-        ellipse(215, 140, 15, 50);
-        ellipse(260, 140, 15, 50);
-        fill(0);
-        ellipse(218, 140, 9, 35);
-        ellipse(262, 140, 9, 35);
+        PI.stroke(0);
+        PI.fill(245, 245, 245);
+        PI.ellipse(215, 140, 15, 50);
+        PI.ellipse(260, 140, 15, 50);
+        PI.fill(0);
+        PI.ellipse(218, 140, 9, 35);
+        PI.ellipse(262, 140, 9, 35);
     }
     else if (this.direction === -1) {
-        stroke(0);
-        fill(245, 245, 245);
-        ellipse(185, 140, 15, 50);
-        ellipse(140, 140, 15, 50);
-        fill(0);
-        ellipse(182, 140, 9, 35);
-        ellipse(138, 140, 9, 35);
+        PI.stroke(0);
+        PI.fill(245, 245, 245);
+        PI.ellipse(185, 140, 15, 50);
+        PI.ellipse(140, 140, 15, 50);
+        PI.fill(0);
+        PI.ellipse(182, 140, 9, 35);
+        PI.ellipse(138, 140, 9, 35);
     }
     
     // Hair
-    stroke(0);
-    fill(61, 33, 22);
+    PI.stroke(0);
+    PI.fill(61, 33, 22);
     drawShapeFromVertices(hair);
     
     // Mouth
-    stroke(0);
-    strokeWeight(2.5);
+    PI.stroke(0);
+    PI.strokeWeight(2.5);
     if (this.direction === 1) {
-        line(215, 200, 255, 200);
+        PI.line(215, 200, 255, 200);
     }
     else if (this.direction === -1) {
-        line(185, 200, 145, 200);
+        PI.line(185, 200, 145, 200);
     }
-    strokeWeight(1);
+    PI.strokeWeight(1);
     
     // Nose
-    fill(224, 121, 112);
+    PI.fill(224, 121, 112);
     if (this.direction === 1) {
-        ellipse(245, 165, 45, 35);
+        PI.ellipse(245, 165, 45, 35);
     }
     else if (this.direction === -1) {
-        ellipse(155, 165, 45, 35);
+        PI.ellipse(155, 165, 45, 35);
     }
     
     // Front Arm
-    stroke(0);
-    fill(this.playerColor);
+    PI.stroke(0);
+    PI.fill(this.playerColor);
     drawShapeFromVertices(frontArm, true);
     
     // Back Boots
-    fill(101, 89, 89);
-    stroke(0);
+    PI.fill(101, 89, 89);
+    PI.stroke(0);
     drawShapeFromVertices(backBoot);
     
     // Legs
-    stroke(0);
-    fill(146, 64, 38);
+    PI.stroke(0);
+    PI.fill(146, 64, 38);
     drawShapeFromVertices(legs);
 
     // Front Boot
-    fill(101, 89, 89);
-    stroke(0);
+    PI.fill(101, 89, 89);
+    PI.stroke(0);
     drawShapeFromVertices(frontBoot);
     
     // Front Hand
-    fill(255, 206, 168);
-    ellipse(frontHand.x, frontHand.y, 50, 50);
+    PI.fill(255, 206, 168);
+    PI.ellipse(frontHand.x, frontHand.y, 50, 50);
     
     if (this.subdivsLeft > 0) {
         subdivide(this.hairVertices);
@@ -1180,7 +1183,7 @@ Player.prototype.draw = function() {
         this.subdivsLeft--;
     }
 	
-	popMatrix();
+	PI.popMatrix();
 };
 
 /***************************************************************************
@@ -1339,27 +1342,27 @@ Tilemap.prototype.reset = function() {
 };
 
 var getAABBvsAABB_Distance = function(a, b) {
-	return PVector.sub(b.position, a.position);
+	return PI.PVector.sub(b.position, a.position);
 };
 
 var getAABBvsAABB_ContactInfo = function(a, b, delta) {
-	var a_halfExtents = new PVector(a.getWidth(), a.getHeight());
-	var b_halfExtents = new PVector(b.getWidth(), b.getHeight());
+	var a_halfExtents = new PI.PVector(a.getWidth(), a.getHeight());
+	var b_halfExtents = new PI.PVector(b.getWidth(), b.getHeight());
 	
-	var combinedPos = new PVector(b.position.x, b.position.y);
+	var combinedPos = new PI.PVector(b.position.x, b.position.y);
 
-	var combinedHalfExtents = PVector.add(a_halfExtents, b_halfExtents);
+	var combinedHalfExtents = PI.PVector.add(a_halfExtents, b_halfExtents);
 	
-	var normalPlane = (abs(delta.x) > abs(delta.y)) ? new PVector(delta.x, 0) : new PVector(0, delta.y);
+	var normalPlane = (PI.abs(delta.x) > PI.abs(delta.y)) ? new PI.PVector(delta.x, 0) : new PI.PVector(0, delta.y);
 	normalPlane.normalize();
 	normalPlane.mult(-1);
 		
-	var centerPlane = new PVector(normalPlane.x * combinedHalfExtents.x, 
+	var centerPlane = new PI.PVector(normalPlane.x * combinedHalfExtents.x, 
 									normalPlane.y * combinedHalfExtents.y);
 	centerPlane.add(combinedPos);
 	
 	// Get distance from point(center of a) to the plane
-	var planeDelta = PVector.sub(a.position, centerPlane);
+	var planeDelta = PI.PVector.sub(a.position, centerPlane);
 	var distanceToPlane = planeDelta.dot(normalPlane);
 	
 	return {norm:normalPlane, dist: distanceToPlane, point: a.position, impulse: 0};
@@ -1402,8 +1405,8 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 	object.atActionable = false;
 
 	// TODO could optimize the object searches. Currently just linear searches. Won't scale for huge TM's
-	for (var r = max(this.getMinRow(), minTile.row); r <= min(this.getMaxRow(), maxTile.row); r++) {
-		for (var c = max(this.getMinCol(), minTile.col); c <= min(this.getMaxCol(), maxTile.col); c++) {
+	for (var r = PI.max(this.getMinRow(), minTile.row); r <= PI.min(this.getMaxRow(), maxTile.row); r++) {
+		for (var c = PI.max(this.getMinCol(), minTile.col); c <= PI.min(this.getMaxCol(), maxTile.col); c++) {
 			var currentTile = this.TM[r][c];
 			
 			if (currentTile === '+') {
@@ -1465,19 +1468,19 @@ Tilemap.prototype.checkForCollisions = function(minV, maxV, object) {
 Tilemap.prototype.drawLadder = function(tile) {
     var corner = Tilemap.getCoordinateFromTile(tile, 1);
     
-	stroke(1);
-	stroke(10, 10, 10);
-    fill(147, 58, 0);
-	rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
-    rect(corner.x, corner.y+TILE_SIZE*0.3, TILE_SIZE, TILE_SIZE*0.2);
-    rect(corner.x, corner.y+TILE_SIZE*0.7, TILE_SIZE, TILE_SIZE*0.2);
+	PI.stroke(1);
+	PI.stroke(10, 10, 10);
+    PI.fill(147, 58, 0);
+ PI.rect(corner.x, corner.y, TILE_SIZE, TILE_SIZE*0.1);
+    PI.rect(corner.x, corner.y+TILE_SIZE*0.3, TILE_SIZE, TILE_SIZE*0.2);
+    PI.rect(corner.x, corner.y+TILE_SIZE*0.7, TILE_SIZE, TILE_SIZE*0.2);
     
-    rect(corner.x, corner.y, TILE_SIZE/5, TILE_SIZE);
-    rect(corner.x+TILE_SIZE*0.8, corner.y, TILE_SIZE/5, TILE_SIZE);
+    PI.rect(corner.x, corner.y, TILE_SIZE/5, TILE_SIZE);
+    PI.rect(corner.x+TILE_SIZE*0.8, corner.y, TILE_SIZE/5, TILE_SIZE);
 };
 
 Tilemap.prototype.drawWall = function(x, y) {
-    image(getImage("cute/WallBlockTall"), x, y, this.size, this.size);
+    PI.image(getImage("cute/WallBlockTall"), x, y, this.size, this.size);
 };
 
 Tilemap.prototype.draw = function(){
@@ -1809,7 +1812,7 @@ var GameState = {
 };
 
 var StartMenuState = function() {
-    this.a=random(1500);
+    this.a=PI.random(1500);
     this.mountains = 0; 
     this.sun = new Sun();
     this.bigJan = new Player(200, 350);
@@ -1818,6 +1821,7 @@ var StartMenuState = function() {
 	this.helpButton = new Button(200, 250, "Help");
 	this.optionsButton = new Button(200, 300, "Options");
 };
+
 var PlayingState = function() {
 	var startTile = Tilemap.getCoordinateFromTile({row:12, col:2}, 0);
 	this.currentLevel = 1;
@@ -1856,7 +1860,7 @@ var PausedState = function() {
     this.exitButton = new Button(200, 300, "Exit");
 };
 var EndState = function() {
-	this.a=random(1500);
+	this.a=PI.random(1500);
     this.mountains = 0; 
     this.sun = new Sun();
 	
@@ -1868,12 +1872,13 @@ var GameStates = [new StartMenuState(), new PlayingState(), new HelpMenuState(),
 var CurrentGameState = GameState.START_MENU; 
 //var CurrentGameState = GameState.PLAYING;
 /* --------------------- Menu Views --------------------- \*/
+
 StartMenuState.prototype.setMountains = function() {
     this.mountains = [[],[],[],[],[],[]]; 
     for (var i=0; i<=5; i++) {
         for (var j=0; j<=40; j++) {
-            var n = noise(this.a);
-            this.mountains[i][j] = map(n,0,1,0,400-i*50);
+            var n = PI.noise(this.a);
+            this.mountains[i][j] = PI.map(n,0,1,0,400-i*50);
             this.a += 0.025;  // ruggedness
         }
     }  
@@ -1885,7 +1890,7 @@ for (var i = 0; i < 400; i+=40) {
 }
 
 StartMenuState.prototype.drawBackground = function() {
-    noStroke();
+    PI.noStroke();
     if (this.mountains === 0) {
         this.setMountains();
     }
@@ -1894,9 +1899,9 @@ StartMenuState.prototype.drawBackground = function() {
     for (var x=0; x<=400; x+=8) {
         var n2 = 0;
         for (var y=0; y<=250; y+=8) {
-            var c = map(noise(n1,n2),0,1,0,255);
-            fill(c, c, c+70,150);
-            rect(x,y,8,8);
+            var c = PI.map(PI.noise(n1,n2),0,1,0,255);
+            PI.fill(c, c, c+70,150);
+            PI.rect(x,y,8,8);
             n2 += 0.05; // step size in noise
         }
         n1 += 0.02; // step size in noise
@@ -1906,9 +1911,9 @@ StartMenuState.prototype.drawBackground = function() {
     // mountains
     for (x=0; x<=5; x++) {
         for (var y=0; y<=40; y++) {
-            fill(10 + x*5, 40+x*10, 0);
+            PI.fill(10 + x*5, 40+x*10, 0);
             // draw quads of width 10 pixels
-            quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
+            PI.quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
         }
     }
     
@@ -1920,7 +1925,7 @@ StartMenuState.prototype.drawBackground = function() {
 };
 
 StartMenuState.prototype.display = function() {
-    background(255, 255, 255);
+    PI.background(255, 255, 255);
 	this.bigJan.changeColor(SETTINGS_PLAYER_COLOR);
     
     this.drawBackground();
@@ -1938,19 +1943,19 @@ StartMenuState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    fill(199, 197, 197, 50);
-    noStroke();
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
+    PI.fill(199, 197, 197, 50);
+    PI.noStroke();
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
 	
-    fill(0);
-    stroke(0);
+    PI.fill(0);
+    PI.stroke(0);
     
-    textSize(50);
-    text("Jumping Jan", 200, 80);
+    PI.textSize(50);
+    PI.text("Jumping Jan", 200, 80);
     
-    textSize(20);
-    text("Collin C. Choy", 75, 380);
+    PI.textSize(20);
+    PI.text("Collin C. Choy", 75, 380);
     
     this.playButton.draw();
     this.helpButton.draw();
@@ -1970,10 +1975,10 @@ StartMenuState.prototype.MouseCallback = function() {
 };
 
 HelpMenuState.prototype.display = function() {
-    background(255, 0, 0, 10);
-    fill(0);
-    textSize(30);
-    text("Instructions", 200, 140);
+    PI.background(255, 0, 0, 10);
+    PI.fill(0);
+    PI.textSize(30);
+    PI.text("Instructions", 200, 140);
     
     // State Constants
     var CONTENT_X1 = 50;
@@ -1985,13 +1990,13 @@ HelpMenuState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    stroke(0);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
+    PI.stroke(0);
+    PI.fill(199, 197, 197, 50);
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
     var instructions = "Jan awakens to find herself in a strange new land. Help her get home by exploring this new world. Be weary of anyone or anything that you find as they may not be friendly!";
-    textSize(14);
-    text(instructions, 55, 180, 280, 95);
+    PI.textSize(14);
+    PI.text(instructions, 55, 180, 280, 95);
     
     this.nextButton.draw();
 };
@@ -2005,18 +2010,18 @@ HelpMenuState.prototype.MouseCallback = function() {
 ControlsMenuState.prototype.drawKey = function(x, y, label, width) {
     var KEY_SIZE_W = width || 20;
     var KEY_SIZE_H = 20;
-    fill(245, 245, 245);
-    rect(x-KEY_SIZE_W/2, y-KEY_SIZE_H/2, KEY_SIZE_W, KEY_SIZE_H);
+    PI.fill(245, 245, 245);
+    PI.rect(x-KEY_SIZE_W/2, y-KEY_SIZE_H/2, KEY_SIZE_W, KEY_SIZE_H);
     
-    fill(0);
-    text(label, x, y);
+    PI.fill(0);
+    PI.text(label, x, y);
 };
 
 ControlsMenuState.prototype.display = function() {
-    background(20, 200, 0, 10);
-    fill(0);
-    textSize(30);
-    text("Controls", 200, 140);
+    PI.background(20, 200, 0, 10);
+    PI.fill(0);
+    PI.textSize(30);
+    PI.text("Controls", 200, 140);
     
     // State Constants
     var CONTENT_X1 = 50;
@@ -2028,26 +2033,26 @@ ControlsMenuState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    stroke(0);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
-    textSize(14);
+    PI.stroke(0);
+    PI.fill(199, 197, 197, 50);
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
+    PI.textSize(14);
 
     // AWSD Movement
     this.drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'W');
     this.drawKey(CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H)+25, 'S');
     this.drawKey(CONTENT_X1+(0.25*CONTENT_W)-25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'A');
     this.drawKey(CONTENT_X1+(0.25*CONTENT_W)+25, CONTENT_Y1+(0.3*CONTENT_H)+25, 'D');
-    text("Move Jan", CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.8*CONTENT_H));
+    PI.text("Move Jan", CONTENT_X1+(0.25*CONTENT_W), CONTENT_Y1+(0.8*CONTENT_H));
     
     this.drawKey(CONTENT_X1+(0.75*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H), 'P');
     this.drawKey(CONTENT_X1+(0.75*CONTENT_W)-15, CONTENT_Y1+(0.7*CONTENT_H), "Space", 50);
-    textAlign(LEFT, CENTER);
-    text("Pause", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.3*CONTENT_H));
-    text("Action", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.7*CONTENT_H));
+    PI.textAlign(PI.LEFT, PI.CENTER);
+    PI.text("Pause", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.3*CONTENT_H));
+    PI.text("Action", CONTENT_X1+(0.75*CONTENT_W)+15, CONTENT_Y1+(0.7*CONTENT_H));
     
-    textAlign(CENTER, CENTER);
+    PI.textAlign(PI.CENTER, PI.CENTER);
     this.backButton.draw();
     this.menuButton.draw();
 };
@@ -2062,10 +2067,10 @@ ControlsMenuState.prototype.MouseCallback = function() {
 };
 
 OptionsMenuState.prototype.display = function() {
-    background(0, 100, 200, 10);
-    fill(0);
-    textSize(30);
-    text("Options", 200, 140);
+    PI.background(0, 100, 200, 10);
+    PI.fill(0);
+    PI.textSize(30);
+    PI.text("Options", 200, 140);
     
 	this.testJan.changeColor(SETTINGS_PLAYER_COLOR);
 	this.testJan.draw();
@@ -2080,14 +2085,14 @@ OptionsMenuState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    stroke(0);
-    strokeWeight(1);
-    fill(199, 197, 197, 50);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
-    textSize(14);
+    PI.stroke(0);
+    PI.strokeWeight(1);
+    PI.fill(199, 197, 197, 50);
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
+    PI.textSize(14);
     
-    text("Player Color: ", CONTENT_X1+(0.2*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H));
+    PI.text("Player Color: ", CONTENT_X1+(0.2*CONTENT_W), CONTENT_Y1+(0.3*CONTENT_H));
 
     this.playerColorSelector.setSelectedIndex(SETTINGS_PLAYER_COLOR);
     
@@ -2112,22 +2117,22 @@ OptionsMenuState.prototype.MouseCallback = function() {
 };
 
 PausedState.prototype.generateNewTip = function() {
-	this.tip = this.tips[floor(random(this.tips.length))];
+	this.tip = this.tips[Math.floor(PI.random(this.tips.length))];
 };
 
 PausedState.prototype.showTip = function(y) {
-	fill(0);
-	textSize(18);
+	PI.fill(0);
+	PI.textSize(18);
 	
-	text("Tips & Tricks: " + this.tip, 50, y-100, 300, 100);
+	PI.text("Tips & Tricks: " + this.tip, 50, y-100, 300, 100);
 }
 
 PausedState.prototype.display = function() {
-	background(0);
+	PI.background(0);
 	TM.draw();
-	noStroke();
-	fill(224, 224, 224, 150);
-	rect(0, 0, 400, 600);
+	PI.noStroke();
+	PI.fill(224, 224, 224, 150);
+ PI.rect(0, 0, 400, 600);
 	
 	// State Constants
     var CONTENT_X1 = 50;
@@ -2139,16 +2144,16 @@ PausedState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    stroke(0);
-    fill(245, 245, 245, 250);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
+    PI.stroke(0);
+    PI.fill(245, 245, 245, 250);
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
 	
-	fill(0);
-	textSize(30);
-    text("Paused", 200, 140);
+	PI.fill(0);
+	PI.textSize(30);
+    PI.text("Paused", 200, 140);
     
-    stroke(0);
+    PI.stroke(0);
     this.continueButton.draw();
     this.helpButton.draw();
     this.exitButton.draw();
@@ -2175,14 +2180,14 @@ PlayingState.prototype.getBgTile = function(x, y, w, h) {
     var corner = {x:x-w/2, y:y-h/2};
 	var c1 = 0, c2 = 0, c3 = 0;
 	if (this.currentLevel <= 5) {
-		c1 = color(28, 40, 107);
-		c2 = color(66, 98, 184);
-		c3 = color(153, 162, 184, 100);
+		c1 = PI.color(28, 40, 107);
+		c2 = PI.color(66, 98, 184);
+		c3 = PI.color(153, 162, 184, 100);
 	}
 	else if (this.currentLevel <= 10 ) {
-		c1 = color(242, 160, 8);
-		c2 = color(224, 118, 38);
-		c3 = color(227, 161, 113, 100);
+		c1 = PI.color(242, 160, 8);
+		c2 = PI.color(224, 118, 38);
+		c3 = PI.color(227, 161, 113, 100);
 	}
 	else if (this.currentLevel <= 15 ) {
 		
@@ -2191,15 +2196,15 @@ PlayingState.prototype.getBgTile = function(x, y, w, h) {
 		
 	}
     
-    fill(c1);
-    rect(corner.x, corner.y, w, h);
+    PI.fill(c1);
+    PI.rect(corner.x, corner.y, w, h);
     
     var drawBall = function(m_x, m_y, m_size) {
-        fill(c2);
-        ellipse(m_x, m_y, m_size, m_size);
-        noStroke();
-        fill(c3);
-        ellipse(m_x-m_size*0.05, m_y-m_size*0.03, m_size*0.6, m_size*0.6);
+        PI.fill(c2);
+        PI.ellipse(m_x, m_y, m_size, m_size);
+        PI.noStroke();
+        PI.fill(c3);
+        PI.ellipse(m_x-m_size*0.05, m_y-m_size*0.03, m_size*0.6, m_size*0.6);
     };
 	
 	drawBall(x+size*0.2, y+size*0.1, size*0.48);
@@ -2213,8 +2218,8 @@ PlayingState.prototype.drawBgTile = function(x, y, w, h) {
     
     this.getBgTile(center.x, center.y, w, h);
     
-    fill(0, 0, 0, 30);
-    rect(corner.x, corner.y, w, h);
+    PI.fill(0, 0, 0, 30);
+    PI.rect(corner.x, corner.y, w, h);
 };
 
 PlayingState.prototype.processNextLevel = function() {
@@ -2232,8 +2237,8 @@ PlayingState.prototype.resetGame = function() {
 };
 
 PlayingState.prototype.showCurrentLevel = function() {
-	fill(240, 240, 240);
-	text("Level: " + ((this.currentLevel === 11) ? "END" : this.currentLevel), 370, 580);
+	PI.fill(240, 240, 240);
+	PI.text("Level: " + ((this.currentLevel === 11) ? "END" : this.currentLevel), 370, 580);
 };
 
 PlayingState.prototype.processWin = function() {
@@ -2244,7 +2249,7 @@ PlayingState.prototype.processWin = function() {
 PlayingState.prototype.MouseCallback = function() {};
 
 PlayingState.prototype.display = function() {
-	background(0);
+	PI.background(0);
 	this.drawBgTile(0, 0, 400, 600);
 	
     TM.draw();
@@ -2255,8 +2260,8 @@ PlayingState.prototype.display = function() {
 	this.Jan.draw();
 	
 	/*var temp = this.Jan.getBoundingBoxEdges();
-	noFill();
-	rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);*/
+	PI.noFill();
+ PI.rect(temp.left, (temp.top), temp.right-temp.left, temp.bottom-temp.top);*/
 	
 	this.showCurrentLevel();
 
@@ -2285,15 +2290,15 @@ EndState.prototype.setMountains = function() {
     this.mountains = [[],[],[],[],[],[]]; 
     for (var i=0; i<=5; i++) {
         for (var j=0; j<=40; j++) {
-            var n = noise(this.a);
-            this.mountains[i][j] = map(n,0,1,0,400-i*50);
+            var n = PI.noise(this.a);
+            this.mountains[i][j] = PI.map(n,0,1,0,400-i*50);
             this.a += 0.025;  // ruggedness
         }
     }  
 };
 
 EndState.prototype.drawBackground = function() {
-    noStroke();
+    PI.noStroke();
     if (this.mountains === 0) {
         this.setMountains();
     }
@@ -2302,9 +2307,9 @@ EndState.prototype.drawBackground = function() {
     for (var x=0; x<=400; x+=8) {
         var n2 = 0;
         for (var y=0; y<=250; y+=8) {
-            var c = map(noise(n1,n2),0,1,0,255);
-            fill(c, c, c+70,150);
-            rect(x,y,8,8);
+            var c = PI.map(PI.noise(n1,n2),0,1,0,255);
+            PI.fill(c, c, c+70,150);
+            PI.rect(x,y,8,8);
             n2 += 0.05; // step size in noise
         }
         n1 += 0.02; // step size in noise
@@ -2314,9 +2319,9 @@ EndState.prototype.drawBackground = function() {
     // mountains
     for (x=0; x<=5; x++) {
         for (var y=0; y<=40; y++) {
-            fill(10 + x*5, 40+x*10, 0);
+            PI.fill(10 + x*5, 40+x*10, 0);
             // draw quads of width 10 pixels
-            quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
+            PI.quad(y*10,this.mountains[x][y]+x*55,(y+1)*10,this.mountains[x][y+1]+(x)*55,(y+1)*10,400,y*10,400);
         }
     }
     
@@ -2329,9 +2334,9 @@ EndState.prototype.drawBackground = function() {
 
 EndState.prototype.display = function() {
 	this.drawBackground();
-    fill(20, 20, 20);
-    textSize(30);
-    text("YOU WIN!", 200, 100);
+    PI.fill(20, 20, 20);
+    PI.textSize(30);
+    PI.text("YOU WIN!", 200, 100);
     
     // State Constants
     var CONTENT_X1 = 50;
@@ -2343,13 +2348,13 @@ EndState.prototype.display = function() {
     var CONTENT_H = CONTENT_Y2 - CONTENT_Y1;
     
     // Content Box
-    stroke(0);
-    fill(199, 197, 197, 150);
-    rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
-    fill(0);
+    PI.stroke(0);
+    PI.fill(199, 197, 197, 150);
+    PI.rect(CONTENT_X1, CONTENT_Y1, CONTENT_W, CONTENT_H);
+    PI.fill(0);
     var instructions = "Jan successfully made it back! After many grueling hours of jumping from platform to platform, she finally made it back up to the surface. It turns out that she must have fallen below to the world beneath the surface. Luckily, her amazing jumping skills enabled her to find her way back up. Let's just hope she doesn't stumble again...\n To Be Continued.";
-    textSize(14);
-    text(instructions, 55, 160, 280, 165);
+    PI.textSize(14);
+    PI.text(instructions, 55, 160, 280, 165);
     
     this.menuButton.draw();
 };
@@ -2357,25 +2362,25 @@ EndState.prototype.display = function() {
 /* --------------------- END Menu Views --------------------- \*/
 
 /* --------------------- User Control --------------------- \*/
-var mouseClicked = function() {
+PI.mouseClicked = function() {
     GameStates[CurrentGameState].MouseCallback();
 };
 
-keyPressed = function() {
+PI.keyPressed = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
-		if (KEYS[keyCode] !== 1) {
-			KEYS[keyCode] = 1;
+		if (KEYS[PI.keyCode] !== 1) {
+			KEYS[PI.keyCode] = 1;
 		}
 	}
 };
 
-keyReleased = function() {
+PI.keyReleased = function() {
 	if (CurrentGameState === GameState.PLAYING || CurrentGameState === GameState.PAUSED) {
-		if (keyCode === 87) {
+		if (PI.keyCode === 87) {
 			KEYS[87] = 0;
 		}
 		else {
-			KEYS[keyCode] = 0;
+			KEYS[PI.keyCode] = 0;
 		}
 	}
 };
@@ -2383,12 +2388,12 @@ keyReleased = function() {
 
 
 /* --------------------- END User Control --------------------- \*/
-var draw = function() {
-    cursor(ARROW);
+PI.draw = function() {
+    PI.cursor(PI.ARROW);
 
 	GameStates[CurrentGameState].display();
 };
 
 /* --------------------- END PROGRAM CODE --------------------- \*/
 
-}}; 
+}; 

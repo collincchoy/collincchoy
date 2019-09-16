@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "start:dev": "webpack-dev-server"
+  },
+  "devDependencies": {
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.8",
+    "webpack-dev-server": "^3.8.0"
+  }
+}
